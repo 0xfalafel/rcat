@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use tokio::io;
 
 mod connect;
 mod server;
@@ -43,8 +44,23 @@ fn port_in_range(s: &str) -> Result<u16, String> {
     }
 }
 
+async fn run() -> Result<(), String> {
+    let mut stdin = tokio::io::stdin();
+    let mut stdout = tokio::io::stdout();
 
-fn main() {
+    tokio::spawn(async move {
+        tokio::io::copy(&mut stdin, &mut stdout).await.unwrap();
+    }).await.unwrap();
+
+    Ok(())
+}
+
+
+#[tokio::main]
+async fn main() {
+    run().await.unwrap();
+
+    /*
     let cli = Cli::parse();
 
     match &cli.commands {
@@ -63,4 +79,5 @@ fn main() {
             }
         }
     }
+    */
 }
