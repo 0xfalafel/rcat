@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
 
+mod connect;
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
@@ -46,14 +48,15 @@ fn main() {
 
     match &cli.commands {
         Commands::Connect { host, port } => {
-            println!("Connect to {}:{}", host, port);
-
+            match connect::run(host, *port) {
+                Ok(()) => {},
+                Err(msg) => println!("failed: {}", msg)
+            };
         },
+
         Commands::Serve { bind_host, port } => {
             println!("Listen to {}:{}", bind_host, port);
 
         }
     }
-
-    println!("Hello, world!");
 }
