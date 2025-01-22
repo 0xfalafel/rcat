@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 mod connect;
+mod server;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -56,7 +57,10 @@ fn main() {
 
         Commands::Serve { bind_host, port } => {
             println!("Listen to {}:{}", bind_host, port);
-
+            match server::run(bind_host, *port) {
+                Ok(()) => {},
+                Err(msg) => println!("failed: {}", msg)
+            }
         }
     }
 }
