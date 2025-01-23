@@ -59,28 +59,25 @@ async fn run() -> Result<(), String> {
 
 #[tokio::main]
 async fn main() {
-    // run().await.unwrap();
-
-    stream::client().await.unwrap();
-
-    /*
     let cli = Cli::parse();
 
     match &cli.commands {
         Commands::Connect { host, port } => {
+            stream::client(host, *port).await.unwrap();
+            /*
             match connect::run(host, *port) {
                 Ok(()) => {},
                 Err(msg) => println!("failed: {}", msg)
             };
+            */
         },
 
         Commands::Serve { bind_host, port } => {
-            println!("Listen to {}:{}", bind_host, port);
-            match server::run(bind_host, *port) {
-                Ok(()) => {},
-                Err(msg) => println!("failed: {}", msg)
-            }
+            stream::server(bind_host, *port).await.unwrap();
+            // match server::run(bind_host, *port) {
+            //     Ok(()) => {},
+            //     Err(msg) => println!("failed: {}", msg)
+            // }
         }
     }
-    */
 }
