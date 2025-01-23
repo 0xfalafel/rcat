@@ -1,8 +1,9 @@
 use clap::{Parser, Subcommand};
 use tokio::io;
 
-mod connect;
+// mod connect;
 mod server;
+mod stream;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -58,7 +59,9 @@ async fn run() -> Result<(), String> {
 
 #[tokio::main]
 async fn main() {
-    run().await.unwrap();
+    // run().await.unwrap();
+
+    stream::client().await.unwrap();
 
     /*
     let cli = Cli::parse();
