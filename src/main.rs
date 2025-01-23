@@ -4,6 +4,7 @@ use tokio::io;
 // mod connect;
 mod server;
 mod stream;
+mod tls;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -27,6 +28,14 @@ enum Commands {
     Serve {
         #[arg(default_value = "127.0.0.1")]
         bind_host: String,
+
+        #[arg(short, long, value_parser = port_in_range)]
+        port: u16
+    },
+
+    /// Tls Connection
+    TlsConnect {
+        host: String,
 
         #[arg(short, long, value_parser = port_in_range)]
         port: u16
@@ -78,6 +87,14 @@ async fn main() {
             //     Ok(()) => {},
             //     Err(msg) => println!("failed: {}", msg)
             // }
-        }
+        },
+
+        Commands::TlsConnect { host, port } => {
+            tls::connect_tls(host, *port).await.unwrap();
+            // match server::run(bind_host, *port) {
+            //     Ok(()) => {},
+            //     Err(msg) => println!("failed: {}", msg)
+            // }
+        },
     }
 }
