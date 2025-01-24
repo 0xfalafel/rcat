@@ -10,36 +10,11 @@ mod tls;
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
 struct Cli {
-    #[command(subcommand)]
-    commands: Commands
-}
+    #[arg(default_value = "127.0.0.1")]
+    host: String,
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Connect to server
-    Connect {
-        host: String,
-
-        #[arg(short, long, value_parser = port_in_range)]
-        port: u16
-    },
-
-    /// Start server
-    Serve {
-        #[arg(default_value = "127.0.0.1")]
-        bind_host: String,
-
-        #[arg(short, long, value_parser = port_in_range)]
-        port: u16
-    },
-
-    /// Tls Connection
-    TlsConnect {
-        host: String,
-
-        #[arg(short, long, value_parser = port_in_range)]
-        port: u16
-    }
+    #[arg(value_parser = port_in_range)]
+    port: u16
 }
 
 fn port_in_range(s: &str) -> Result<u16, String> {
@@ -69,32 +44,5 @@ async fn run() -> Result<(), String> {
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
-
-    match &cli.commands {
-        Commands::Connect { host, port } => {
-            stream::client(host, *port).await.unwrap();
-            /*
-            match connect::run(host, *port) {
-                Ok(()) => {},
-                Err(msg) => println!("failed: {}", msg)
-            };
-            */
-        },
-
-        Commands::Serve { bind_host, port } => {
-            stream::server(bind_host, *port).await.unwrap();
-            // match server::run(bind_host, *port) {
-            //     Ok(()) => {},
-            //     Err(msg) => println!("failed: {}", msg)
-            // }
-        },
-
-        Commands::TlsConnect { host, port } => {
-            tls::connect_tls(host, *port).await.unwrap();
-            // match server::run(bind_host, *port) {
-            //     Ok(()) => {},
-            //     Err(msg) => println!("failed: {}", msg)
-            // }
-        },
-    }
+    stream::client(&cli.host, cli.port).await.unwrap();;
 }
