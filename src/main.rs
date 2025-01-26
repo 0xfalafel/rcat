@@ -1,6 +1,6 @@
 use std::process::exit;
 
-use clap::{builder::Str, Parser};
+use clap::Parser;
 use tokio::io;
 
 // mod connect;
@@ -12,15 +12,13 @@ mod tls;
 //#[command(author, version, about, long_about = None)]
 //#[command(propagate_version = true)]
 struct Cli {
-    #[arg(short = 'l', required = false)]
+    #[arg(short='l')]
     listen: bool,
 
+    #[arg(short='t', long)]
+    tls: bool,
 
-    // #[arg(default_value = "127.0.0.1")]
-    #[arg(required_unless_present = "listen", default_value = "127.0.0.1")]
     host: String,
-
-    // #[arg(value_parser = get_port)]
     port: Option<String>
 }
 
@@ -90,7 +88,12 @@ async fn main() {
 
     // We connect to a remote server
     } else {
-        if let Err(err_msg) = stream::client(&host, port).await {
+        let res = match cli.tls {
+            false => stream::client(&host, port).await,
+            true  => tls::connect_tls(&host, port).await
+        };
+
+        if let Err(err_msg) = res {
             println!("{}", err_msg)
         }
     }
