@@ -2,9 +2,9 @@
 pub async fn client(host: &str, port: u16) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
-    let client = tokio::net::TcpStream::connect(addr)
+    let client = tokio::net::TcpStream::connect(&addr)
         .await
-        .map_err(|_| "failed to connect")?;
+        .map_err(|_| format!("failed to connect to {}", addr))?;
 
         let (mut reader, mut writer) = client.into_split();
 
@@ -28,9 +28,9 @@ pub async fn client(host: &str, port: u16) -> Result<(), String> {
 pub async fn server(host: &str, port: u16) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
-    let listener = tokio::net::TcpListener::bind(addr)
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
-        .map_err(|_| "failed to bind")?;
+        .map_err(|_| format!("failed to bind {}", addr))?;
 
     let (handle, _) = listener.accept().await.map_err(|_| "failed to accept connection")?;
 
