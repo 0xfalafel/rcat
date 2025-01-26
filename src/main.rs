@@ -1,14 +1,12 @@
 use std::process::exit;
 
-use clap::Parser;
+use clap::{builder::Str, Parser};
 use tokio::io;
 
 // mod connect;
 mod server;
 mod stream;
 mod tls;
-
-#[allow(unused)]
 
 #[derive(Parser,Default,Debug)]
 //#[command(author, version, about, long_about = None)]
@@ -50,6 +48,28 @@ async fn run() -> Result<(), String> {
 
     Ok(())
 }
+
+fn get_host_port(cli: Cli) -> Result<(String, u16), String> {
+
+    // We have a port passed as an argument
+    if let Some(port) = cli.port {
+        
+        let port = get_port(&port)?;
+        return Ok((cli.host, port))
+
+    // We don't have any `port` argument. Interpret the host argument as a port 
+    // Host will be "0.0.0.0" by default when listening
+    // and an error when connecting to a server
+    } else {
+        if cli.listen == false {
+            return Err("An host and port parameters are requierd to connect to a server".to_string());
+        }
+
+        let port = get_port(&cli.host)?;
+        return Ok(("0.0.0.0".to_string(), port));
+    }
+}
+
 
 #[tokio::main]
 async fn main() {
