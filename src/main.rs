@@ -93,11 +93,20 @@ async fn main() {
     // We connect to a remote server
     } else {
 
+        // We have a port passed as an argument
+        if let Some(port) = cli.port {
+
+            let port = match get_port(&port) {
+                Err(err_msg) => { println!("{}", err_msg); exit(1) },
+                Ok(port) => port
+            };
+    
+            if let Err(err_msg) = stream::client(&cli.host, port).await {
+                println!("{}", err_msg)
+            }
+        } else {
+            println!("A port argument is required.")
+        }
     }
 
-    println!("{}", cli.host);
-
-
-
-    // stream::client(&cli.host, cli.port).await.unwrap();
 }
