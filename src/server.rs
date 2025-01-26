@@ -1,6 +1,7 @@
 use std::io::{Read, stdout, Write};
 use std::net::TcpListener;
 
+#[allow(unused)]
 pub fn run(host: &str, port: u16) -> Result<(), String>{
     let addr = format!("{}:{}", host, port);
     println!("Connecting to {}", addr);

@@ -1,3 +1,4 @@
+#[allow(unused)]
 pub async fn client(host: &str, port: u16) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
@@ -23,7 +24,7 @@ pub async fn client(host: &str, port: u16) -> Result<(), String> {
     Ok(())
 }
 
-
+#[allow(unused)]
 pub async fn server(host: &str, port: u16) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
