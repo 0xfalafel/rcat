@@ -49,13 +49,13 @@ async fn run() -> Result<(), String> {
     Ok(())
 }
 
-fn get_host_port(cli: Cli) -> Result<(String, u16), String> {
+fn get_host_port(cli: &Cli) -> Result<(String, u16), String> {
 
     // We have a port passed as an argument
-    if let Some(port) = cli.port {
+    if let Some(port) = &cli.port {
         
         let port = get_port(&port)?;
-        return Ok((cli.host, port))
+        return Ok((cli.host.clone(), port))
 
     // We don't have any `port` argument. Interpret the host argument as a port 
     // Host will be "0.0.0.0" by default when listening
@@ -75,58 +75,23 @@ fn get_host_port(cli: Cli) -> Result<(String, u16), String> {
 async fn main() {
     let cli = Cli::parse();
 
+    let (host, port) = match get_host_port(&cli) {
+        Err(err_msg) => {
+            println!("{}", err_msg); exit(1)
+        },
+        Ok((host, port)) => (host, port)
+    };
+
     // We start a listener
     if cli.listen == true {
-
-        // We have a port passed as an argument
-        if let Some(port) = cli.port {
-            
-            let port = match get_port(&port) {
-                Err(err_msg) => {println!("{}", err_msg); exit(1)},
-                Ok(port) => port
-            };
-
-            if let Err(err_msg) = stream::server(&cli.host, port).await {
-                println!("{}", err_msg)
-            }
-
-        // We don't have any `port` argument. Interpret the host argument as a port 
-        } else {
-            let port = match get_port(&cli.host) {
-                Err(err_msg) => {
-                    println!("{}", err_msg);
-                    exit(1)
-                },
-                Ok(port) => port
-            };
-
-            match stream::server("0.0.0.0", port).await {
-                Ok(_) => {},
-                Err(err_msg) => println!("{}", err_msg)
-            }
-
-            if let Err(err_msg) = stream::server("0.0.0.0", port).await {
-                println!("{}", err_msg)
-            }
+        if let Err(err_msg) = stream::server(&host, port).await {
+            println!("{}", err_msg)
         }
-        
+
     // We connect to a remote server
     } else {
-
-        // We have a port passed as an argument
-        if let Some(port) = cli.port {
-
-            let port = match get_port(&port) {
-                Err(err_msg) => { println!("{}", err_msg); exit(1) },
-                Ok(port) => port
-            };
-    
-            if let Err(err_msg) = stream::client(&cli.host, port).await {
-                println!("{}", err_msg)
-            }
-        } else {
-            println!("A port argument is required.")
+        if let Err(err_msg) = stream::client(&host, port).await {
+            println!("{}", err_msg)
         }
     }
-
 }
