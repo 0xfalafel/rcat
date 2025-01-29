@@ -6,6 +6,7 @@ use tokio::io;
 // mod connect;
 mod server;
 mod stream;
+mod udp;
 mod tls;
 
 #[derive(Parser,Default,Debug)]
