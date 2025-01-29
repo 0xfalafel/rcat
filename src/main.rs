@@ -19,6 +19,9 @@ struct Cli {
     #[arg(short='t', long)]
     tls: bool,
 
+    #[arg(short='u', long)]
+    udp: bool,
+
     host: String,
     port: Option<String>
 }
@@ -89,9 +92,10 @@ async fn main() {
 
     // We connect to a remote server
     } else {
-        let res = match cli.tls {
-            false => stream::client(&host, port).await,
-            true  => tls::connect_tls(&host, port).await
+        let res = match cli {
+            cli if cli.udp => udp::udp_connect(&host, port).await,
+            cli if cli.tls  => tls::connect_tls(&host, port).await,
+            _ => stream::client(&host, port).await,
         };
 
         if let Err(err_msg) = res {

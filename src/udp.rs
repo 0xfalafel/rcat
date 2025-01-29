@@ -30,13 +30,58 @@ async fn bind_random_port() -> Result<UdpSocket, String> {
 pub async fn udp_connect(host: &String, port: u16) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
-    let socket = bind_random_port().await?;
+    let socket: UdpSocket = bind_random_port().await?;
 
     let client = socket.connect(&addr)
         .await
         .map_err(|_| format!("failed to connect to {}", addr))?;
 
-    // let (mut reader, mut writer) = client.into_split();
+    let mut stdin = stdin();
+    let mut stdout = stdout();
+
+    let mut stdin_buffer = [0; 512];
+    let mut network_buffer  = [0; 512];
+
+    let mut active = true;
+
+    while active {
+        select! {
+            // Read from STDIN
+            res = stdin.read(&mut stdin_buffer) => {
+                match res {
+                    Ok(n) if n !=0 => {
+                      socket.send(&stdin_buffer[0..n])
+                        .await
+                        .map_err(|_| "failed to write to socket")?;
+                    },
+                    Ok(0) => {
+                        active = false
+                    },
+                    Err(_) => {
+                        return Err("failed to read from stdin".to_string())
+                    },
+                    Ok(1..) => unreachable!()
+                }
+            },
+            // Read from Socket
+            res = socket.recv(&mut network_buffer) => {
+                match res {
+                    Ok(n) if n !=0 => {
+                      stdout.write(&network_buffer[0..n])
+                        .await
+                        .map_err(|_| "failed to write to stdout")?;
+                    },
+                    Ok(0) => {
+                        active = false
+                    },
+                    Err(_) => {
+                        return Err("failed to read from socket".to_string())
+                    },
+                    Ok(1..) => unreachable!()
+                }
+            }
+        }
+    }
 
     Ok(())
 }
