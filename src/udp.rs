@@ -32,7 +32,7 @@ pub async fn udp_connect(host: &String, port: u16) -> Result<(), String> {
 
     let socket: UdpSocket = bind_random_port().await?;
 
-    let client = socket.connect(&addr)
+    socket.connect(&addr)
         .await
         .map_err(|_| format!("failed to connect to {}", addr))?;
 

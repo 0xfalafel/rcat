@@ -26,7 +26,6 @@ struct Cli {
     port: Option<String>
 }
 
-#[allow(unused)]
 fn get_port(s: &str) -> Result<u16, String> {
     let port: u16 = u16::from_str_radix(s, 10)
         .map_err(|_| format!("{} is not a valid port number", s))?;

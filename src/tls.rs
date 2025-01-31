@@ -1,4 +1,4 @@
-use std::{io::Split, sync::Arc};
+use std::sync::Arc;
 use tokio::{io::split, net::TcpStream};
 
 use tokio_rustls::{rustls::{self, pki_types::ServerName}, TlsConnector};
