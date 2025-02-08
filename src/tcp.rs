@@ -1,3 +1,6 @@
+use colored::Colorize;
+use crate::Cli;
+
 pub async fn client(host: &str, port: u16) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
@@ -23,15 +26,22 @@ pub async fn client(host: &str, port: u16) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn server(host: &str, port: u16) -> Result<(), String> {
+pub async fn server(host: &str, port: u16, cli: Cli) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
     let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .map_err(|_| format!("failed to bind {}", addr))?;
+    
+    // Info message on successful bind
+    if !cli.silent {
+        eprintln!("Listening on {} (tcp)", addr.blue());
+    }
 
-    let (handle, _) = listener.accept().await.map_err(|_| "failed to accept connection")?;
-
+    let (handle, remote_addr) = listener.accept().await.map_err(|_| "failed to accept connection")?;
+    if !cli.silent {
+        eprintln!("Connection received from {}", remote_addr.to_string().green());
+    }
 
     let (mut reader, mut writer) = handle.into_split();
 
