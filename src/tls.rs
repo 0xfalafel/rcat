@@ -1,6 +1,8 @@
+use std::fmt::format;
 use std::sync::Arc;
+use std::io::{Error, ErrorKind};
 use tokio::{io::split, net::TcpStream};
-use tokio_rustls::{rustls::{self, pki_types::ServerName}, TlsConnector};
+use tokio_rustls::{rustls::{self, pki_types::ServerName, Error as RustlsError}, TlsConnector};
 
 pub async fn connect_tls(host: &str, port: u16) -> Result<(), String> {
     let mut root_cert_store = rustls::RootCertStore::empty();
@@ -26,14 +28,22 @@ pub async fn connect_tls(host: &str, port: u16) -> Result<(), String> {
 
     // let stream = tls_connector.connect(domain.clone(), stream)
     //     .await
-    //     .map_err(|_| format!("Failed to etablish TLS connection with {} at address {}", domain.to_str(), addr))?;
+    //     .map_err(|_| format!("Failed to etablish TLS connection with {}", addr))?;
 
     let stream = match tls_connector.connect(domain.clone(), stream).await {
         Ok(tls_stream) => tls_stream,
 
-        // https://medium.com/@laurent.mendil/custom-errors-in-rust-38dbc860d825
         Err(e) => {
-            return Err(format!("Failed to establish TLS connection with {}: {:?}", addr, e));
+            if e.kind() == ErrorKind::InvalidData {
+                match e.downcast::<RustlsError>() {
+                    Ok(x) => println!("ok: {:?}", x),
+                    Err(e) => println!("err: {:?}", e),
+                }
+
+                return Err(format!("plop"))
+            }
+
+            return Err(format!("Could not connect to {} : {:?}", addr, e));
         }
     };
 
