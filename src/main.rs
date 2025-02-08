@@ -85,7 +85,12 @@ async fn main() {
 
     // We start a listener
     if cli.listen == true {
-        if let Err(err_msg) = stream::server(&host, port).await {
+        let res = match cli {
+            cli if cli.udp => udp::udp_serve(&host, port).await,
+            _  => stream::server(&host, port).await,
+        };
+
+        if let Err(err_msg) = res {
             println!("{}", err_msg)
         }
 
