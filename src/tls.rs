@@ -1,6 +1,4 @@
-use std::fmt::format;
 use std::sync::Arc;
-use std::io::{Error, ErrorKind};
 use tokio::{io::split, net::TcpStream};
 use tokio_rustls::{rustls::{self, pki_types::ServerName, Error as RustlsError}, TlsConnector};
 
@@ -26,24 +24,16 @@ pub async fn connect_tls(host: &str, port: u16) -> Result<(), String> {
         .await
         .map_err(|_| format!("Could not connect to {}", addr))?;
 
-    // let stream = tls_connector.connect(domain.clone(), stream)
-    //     .await
-    //     .map_err(|_| format!("Failed to etablish TLS connection with {}", addr))?;
-
     let stream = match tls_connector.connect(domain.clone(), stream).await {
         Ok(tls_stream) => tls_stream,
 
         Err(e) => {
-            if e.kind() == ErrorKind::InvalidData {
-                match e.downcast::<RustlsError>() {
-                    Ok(x) => println!("ok: {:?}", x),
-                    Err(e) => println!("err: {:?}", e),
-                }
+            let error_detail= match e.downcast::<RustlsError>() {
+                Ok(RustlsError::InvalidCertificate(_)) => "Invalid certificate.",
+                _ => ""
+            };
 
-                return Err(format!("plop"))
-            }
-
-            return Err(format!("Could not connect to {} : {:?}", addr, e));
+            return Err(format!("Could not connect to {}. {}", addr, error_detail));
         }
     };
 
