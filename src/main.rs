@@ -4,7 +4,7 @@ use clap::Parser;
 
 // mod connect;
 mod server;
-mod stream;
+mod tcp;
 mod udp;
 mod tls;
 
@@ -86,7 +86,7 @@ async fn main() {
     if cli.listen == true {
         let res = match cli {
             cli if cli.udp => udp::udp_serve(&host, port).await,
-            _  => stream::server(&host, port).await,
+            _  => tcp::server(&host, port).await,
         };
 
         if let Err(err_msg) = res {
@@ -97,8 +97,8 @@ async fn main() {
     } else {
         let res = match cli {
             cli if cli.udp => udp::udp_connect(&host, port).await,
-            cli if cli.tls  => tls::connect_tls(&host, port).await,
-            _ => stream::client(&host, port).await,
+            cli if cli.tls => tls::connect_tls(&host, port).await,
+            _ => tcp::client(&host, port).await,
         };
 
         if let Err(err_msg) = res {
