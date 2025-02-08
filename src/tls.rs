@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use tokio::{io::split, net::TcpStream};
-
 use tokio_rustls::{rustls::{self, pki_types::ServerName}, TlsConnector};
 
 pub async fn connect_tls(host: &str, port: u16) -> Result<(), String> {
@@ -25,10 +24,18 @@ pub async fn connect_tls(host: &str, port: u16) -> Result<(), String> {
         .await
         .map_err(|_| format!("Could not connect to {}", addr))?;
 
-    let stream = tls_connector.connect(domain.clone(), stream)
-        .await
-        .map_err(|_| format!("Failed to etablish TLS connection with {} at address {}", domain.to_str(), addr))?;
+    // let stream = tls_connector.connect(domain.clone(), stream)
+    //     .await
+    //     .map_err(|_| format!("Failed to etablish TLS connection with {} at address {}", domain.to_str(), addr))?;
 
+    let stream = match tls_connector.connect(domain.clone(), stream).await {
+        Ok(tls_stream) => tls_stream,
+
+        // https://medium.com/@laurent.mendil/custom-errors-in-rust-38dbc860d825
+        Err(e) => {
+            return Err(format!("Failed to establish TLS connection with {}: {:?}", addr, e));
+        }
+    };
 
     let (mut reader, mut writer) = split(stream);
 
