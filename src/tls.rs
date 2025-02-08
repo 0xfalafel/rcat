@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use tokio::{io::split, net::TcpStream};
 use tokio_rustls::{rustls::{self, pki_types::ServerName, Error as RustlsError}, TlsConnector};
+use colored::Colorize;
 
 pub async fn connect_tls(host: &str, port: u16) -> Result<(), String> {
     let mut root_cert_store = rustls::RootCertStore::empty();
@@ -33,7 +34,7 @@ pub async fn connect_tls(host: &str, port: u16) -> Result<(), String> {
                 _ => ""
             };
 
-            return Err(format!("Could not connect to {}. {}", addr, error_detail));
+            return Err(format!("TLS error for {}: {}", addr, error_detail.red()));
         }
     };
 
