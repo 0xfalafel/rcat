@@ -21,6 +21,9 @@ struct Cli {
     #[arg(short='u', long)]
     udp: bool,
 
+    #[arg(short, long)]
+    silent: bool,
+
     host: String,
     port: Option<String>
 }
@@ -86,7 +89,7 @@ async fn main() {
     if cli.listen == true {
         let res = match cli {
             cli if cli.udp => udp::udp_serve(&host, port).await,
-            _  => tcp::server(&host, port).await,
+            _  => tcp::server(&host, port, cli).await,
         };
 
         if let Err(err_msg) = res {
