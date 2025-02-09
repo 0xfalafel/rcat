@@ -2,6 +2,7 @@ use std::sync::Arc;
 use tokio::{io::split, net::TcpStream};
 use tokio_rustls::{rustls::{self, pki_types::ServerName, SignatureScheme, Error as RustlsError}, TlsConnector};
 use tokio_rustls::rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
+
 use colored::Colorize;
 use crate::Cli;
 
@@ -35,7 +36,6 @@ pub async fn connect_tls(host: &str, port: u16, cli: Cli) -> Result<(), String> 
 
     let stream = match tls_connector.connect(domain.clone(), stream).await {
         Ok(tls_stream) => tls_stream,
-
         Err(e) => {
             let error_detail= match e.downcast::<RustlsError>() {
                 Ok(RustlsError::InvalidCertificate(_)) => "Invalid certificate.",
@@ -45,6 +45,11 @@ pub async fn connect_tls(host: &str, port: u16, cli: Cli) -> Result<(), String> 
             return Err(format!("TLS error for {}: {}", addr, error_detail.red()));
         }
     };
+
+    // Info message when connection is established
+    if !cli.silent {
+        eprintln!("Connected with TLS to {}", addr.green());
+    }
 
     let (mut reader, mut writer) = split(stream);
 
