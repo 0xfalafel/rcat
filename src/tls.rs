@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use colored::Colorize;
 use tokio::{io::split, net::TcpStream};
 
 use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::ServerName, SignatureScheme}, TlsConnector};
@@ -37,6 +38,10 @@ pub async fn connect_tls(host: &str, port: u16, cli: Cli) -> Result<(), String> 
         .await
         .map_err(|_| format!("Failed to etablish TLS connection with {} at address {}", domain.to_str(), addr))?;
 
+    // Info message when connection is established
+    if !cli.silent {
+        eprintln!("Connected with TLS to {}", addr.green());
+    }
 
     let (mut reader, mut writer) = split(stream);
 
