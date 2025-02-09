@@ -1,12 +1,16 @@
 use colored::Colorize;
 use crate::Cli;
 
-pub async fn client(host: &str, port: u16) -> Result<(), String> {
+pub async fn client(host: &str, port: u16, cli: Cli) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
     let client = tokio::net::TcpStream::connect(&addr)
         .await
         .map_err(|_| format!("failed to connect to {}", addr))?;
+
+    if !cli.silent {
+        eprintln!("Connected to {}", addr.green())
+    }
 
     let (mut reader, mut writer) = client.into_split();
 

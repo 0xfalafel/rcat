@@ -101,7 +101,7 @@ async fn main() {
         let res = match cli {
             cli if cli.udp => udp::udp_connect(&host, port).await,
             cli if cli.tls => tls::connect_tls(&host, port).await,
-            _ => tcp::client(&host, port).await,
+            _ => tcp::client(&host, port, cli).await,
         };
 
         if let Err(err_msg) = res {
