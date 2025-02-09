@@ -24,6 +24,9 @@ struct Cli {
     #[arg(short, long)]
     silent: bool,
 
+    #[arg(short='k', long)]
+    insecure: bool,
+
     host: String,
     port: Option<String>
 }
@@ -100,7 +103,7 @@ async fn main() {
     } else {
         let res = match cli {
             cli if cli.udp => udp::udp_connect(&host, port).await,
-            cli if cli.tls => tls::connect_tls(&host, port).await,
+            cli if cli.tls => tls::connect_tls(&host, port, cli).await,
             _ => tcp::client(&host, port, cli).await,
         };
 
