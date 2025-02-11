@@ -1,7 +1,7 @@
-use std::process::exit;
+use std::{future::Future, process::exit};
 use colored::Colorize;
 
-use clap::Parser;
+use clap::{error::Result, Parser};
 
 // mod connect;
 mod server;
@@ -78,6 +78,24 @@ fn get_host_port(cli: &Cli) -> Result<(String, u16), String> {
 }
 
 
+fn async_run<F>(future: F) -> Result<(), String>
+where 
+    F: Future<Output = Result<(), String>>
+{
+    let runtime = tokio::runtime::Runtime::new().unwrap_or_else(|_|
+        {eprintln!("{}","Failed to initialize tokio runtime.".red()); exit(1)}
+    );
+
+    runtime.block_on(async {
+        tokio::select! {
+            _ = future => {}
+        }
+    });
+
+    Ok(())
+}
+
+
 fn main() {
     let cli = Cli::parse();
 
@@ -88,15 +106,11 @@ fn main() {
         Ok((host, port)) => (host, port)
     };
 
-    let runtime = tokio::runtime::Runtime::new().unwrap_or_else(|_|
-        {eprintln!("{}","Failed to initialize tokio runtime.".red()); exit(1)}
-    );
-
     // We start a listener
     if cli.listen == true {
         let res = match cli {
-            cli if cli.udp => runtime.block_on(udp::udp_serve(&host, port)),
-            _  => runtime.block_on(tcp::server(&host, port, cli)),
+            cli if cli.udp => async_run(udp::udp_serve(&host, port)),
+            _  => async_run(tcp::server(&host, port, cli)),
         };
 
         if let Err(err_msg) = res {
@@ -106,9 +120,9 @@ fn main() {
     // We connect to a remote server
     } else {
         let res = match cli {
-            cli if cli.udp => runtime.block_on(udp::udp_connect(&host, port)),
-            cli if cli.tls => runtime.block_on(tls::connect_tls(&host, port, cli)),
-            _ => runtime.block_on(tcp::client(&host, port, cli)),
+            cli if cli.udp => async_run(udp::udp_connect(&host, port)),
+            cli if cli.tls => async_run(tls::connect_tls(&host, port, cli)),
+            _ => async_run(tcp::client(&host, port, cli)),
         };
 
         if let Err(err_msg) = res {
