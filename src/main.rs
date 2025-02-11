@@ -93,7 +93,7 @@ where
     let res = runtime.block_on(async {
         tokio::select! {
             res = future => res,
-            _ = tokio::signal::ctrl_c(), if !cli.ignore_signals => Ok(()) // if -S, don't close on Ctrl-C
+            _ = tokio::signal::ctrl_c(), if !cli.ignore_signals => {println!("End process"); Ok(())} // if -S, don't close on Ctrl-C
         }
     });
 
@@ -111,7 +111,7 @@ fn main() {
     if cli.ignore_signals {
         // Setup a handler for Ctrl-C that will do nothing
         // when the signal is received
-        if let Err(_) = ctrlc::set_handler(move || {}) {
+        if let Err(_) = ctrlc::set_handler(move || {println!("Handling signal in initial handler");}) {
             eprintln!("Error setting Ctrl-C handler");
         }
     }
