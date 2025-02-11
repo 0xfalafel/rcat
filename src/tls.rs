@@ -6,7 +6,7 @@ use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_t
 use tokio_rustls::rustls::client::danger::{ServerCertVerified, ServerCertVerifier};
 use crate::Cli;
 
-pub async fn connect_tls(host: &str, port: u16, cli: Cli) -> Result<(), String> {
+pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
     let mut root_cert_store = rustls::RootCertStore::empty();
 

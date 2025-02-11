@@ -1,7 +1,7 @@
 use colored::Colorize;
 use crate::Cli;
 
-pub async fn client(host: &str, port: u16, cli: Cli) -> Result<(), String> {
+pub async fn client(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
     let client = tokio::net::TcpStream::connect(&addr)
@@ -30,7 +30,7 @@ pub async fn client(host: &str, port: u16, cli: Cli) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn server(host: &str, port: u16, cli: Cli) -> Result<(), String> {
+pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
     let listener = tokio::net::TcpListener::bind(&addr)

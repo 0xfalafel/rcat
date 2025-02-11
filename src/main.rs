@@ -2,6 +2,7 @@ use std::{future::Future, process::exit};
 use colored::Colorize;
 
 use clap::{error::Result, Parser};
+use ctrlc;
 
 // mod connect;
 mod server;
@@ -22,11 +23,14 @@ struct Cli {
     #[arg(short='u', long)]
     udp: bool,
 
-    #[arg(short, long)]
+    #[arg(short='s', long)]
     silent: bool,
 
     #[arg(short='k', long)]
     insecure: bool,
+
+    #[arg(short='S', long)]
+    ignore_signals: bool,
 
     host: String,
     port: Option<String>
@@ -78,7 +82,7 @@ fn get_host_port(cli: &Cli) -> Result<(String, u16), String> {
 }
 
 
-fn async_run<F>(future: F) -> Result<(), String>
+fn async_run<F>(future: F, cli: &Cli) -> Result<(), String>
 where 
     F: Future<Output = Result<(), String>>
 {
@@ -89,7 +93,7 @@ where
     let res = runtime.block_on(async {
         tokio::select! {
             res = future => res,
-            _ = tokio::signal::ctrl_c() => Ok(())
+            _ = tokio::signal::ctrl_c(), if !cli.ignore_signals => Ok(()) // if -S, don't close on Ctrl-C
         }
     });
 
@@ -104,6 +108,15 @@ where
 fn main() {
     let cli = Cli::parse();
 
+    if cli.ignore_signals {
+        // Setup a handler for Ctrl-C that will do nothing
+        // when the signal is received
+        if let Err(_) = ctrlc::set_handler(move || {}) {
+            eprintln!("Error setting Ctrl-C handler");
+        }
+    }
+
+
     let (host, port) = match get_host_port(&cli) {
         Err(err_msg) => {
             eprintln!("{}", err_msg); exit(1)
@@ -114,8 +127,8 @@ fn main() {
     // We start a listener
     if cli.listen == true {
         let res = match cli {
-            cli if cli.udp => async_run(udp::udp_serve(&host, port)),
-            _  => async_run(tcp::server(&host, port, cli)),
+            cli if cli.udp => async_run(udp::udp_serve(&host, port), &cli),
+            _  => async_run(tcp::server(&host, port, &cli), &cli),
         };
 
         if let Err(err_msg) = res {
@@ -125,9 +138,9 @@ fn main() {
     // We connect to a remote server
     } else {
         let res = match cli {
-            cli if cli.udp => async_run(udp::udp_connect(&host, port)),
-            cli if cli.tls => async_run(tls::connect_tls(&host, port, cli)),
-            _ => async_run(tcp::client(&host, port, cli)),
+            cli if cli.udp => async_run(udp::udp_connect(&host, port), &cli),
+            cli if cli.tls => async_run(tls::connect_tls(&host, port, &cli), &cli),
+            _ => async_run(tcp::client(&host, port, &cli), &cli),
         };
 
         if let Err(err_msg) = res {
