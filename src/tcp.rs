@@ -6,7 +6,7 @@ pub async fn client(host: &str, port: u16, cli: Cli) -> Result<(), String> {
 
     let client = tokio::net::TcpStream::connect(&addr)
         .await
-        .map_err(|_| format!("failed to connect to {}", addr))?;
+        .map_err(|_| format!("Failed to connect to {}", addr.red()))?;
 
     if !cli.silent {
         eprintln!("Connected to {}", addr.green())
