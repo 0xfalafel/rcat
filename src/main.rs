@@ -106,7 +106,7 @@ fn main() {
 
     let (host, port) = match get_host_port(&cli) {
         Err(err_msg) => {
-            println!("{}", err_msg); exit(1)
+            eprintln!("{}", err_msg); exit(1)
         },
         Ok((host, port)) => (host, port)
     };
@@ -119,7 +119,7 @@ fn main() {
         };
 
         if let Err(err_msg) = res {
-            println!("{}", err_msg)
+            eprintln!("{}", err_msg)
         }
 
     // We connect to a remote server
@@ -131,7 +131,7 @@ fn main() {
         };
 
         if let Err(err_msg) = res {
-            println!("{}", err_msg)
+            eprintln!("{}", err_msg)
         }
     }
 }
