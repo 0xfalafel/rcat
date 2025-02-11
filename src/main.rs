@@ -88,7 +88,8 @@ where
 
     let res = runtime.block_on(async {
         tokio::select! {
-            res = future => res
+            res = future => res,
+            _ = tokio::signal::ctrl_c() => Ok(())
         }
     });
 
