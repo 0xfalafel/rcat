@@ -93,6 +93,10 @@ where
         }
     });
 
+    // End the tokio runtime.
+    // This will close the program when the connection is closed, or Ctrl+C is pressed.
+    runtime.shutdown_background();
+
     return res
 }
 
