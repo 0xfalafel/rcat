@@ -86,13 +86,13 @@ where
         {eprintln!("{}","Failed to initialize tokio runtime.".red()); exit(1)}
     );
 
-    runtime.block_on(async {
+    let res = runtime.block_on(async {
         tokio::select! {
-            _ = future => {}
+            res = future => res
         }
     });
 
-    Ok(())
+    return res
 }
 
 
