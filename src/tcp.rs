@@ -2,7 +2,6 @@ use std::sync::Arc;
 use tokio::{net::tcp::OwnedWriteHalf, signal::unix::SignalKind, sync::Mutex};
 
 use colored::Colorize;
-use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::Cli;
 
@@ -56,7 +55,8 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
     let shared_writer = Arc::new(Mutex::new(writer));
     let shared_writer2 = shared_writer.clone();
-    
+    let writer3 = shared_writer.clone();
+
     let client_read = tokio::spawn(async move {
         tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
     });
@@ -83,19 +83,17 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
         Ok(())
     });
 
-    let ctrlc_handler = tokio::spawn(async move {
-        loop {
-            tokio::signal::ctrl_c().await.unwrap();
-            let mut guard = shared_writer2.lock().await;
-            guard.write(b"\x03").await.unwrap();
-        }
-    });
+    // handle Ctrl-C
+    tokio::spawn(handle_signal(SignalKind::interrupt(), 3, shared_writer2));
+
+    // handle Ctrl-Z
+    tokio::spawn(handle_signal(SignalKind::from_raw(20), 26, writer3));
 
 
     tokio::select! {
         _ = client_read  => {},
         _ = client_write => {},
-        _ = ctrlc_handler => {},
+        // _ = ctrlc_handler => {},
     }
 
     Ok(())
@@ -104,13 +102,14 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 /// When a signal is received, transmit the corresponding ASCII control code
 /// over the TCP connection.
 /// Reference of ASCII control code: https://jvns.ca/ascii
-async fn handle_signal(signum: i32, ascii_control_code: u8, writer: Arc<Mutex<OwnedWriteHalf>>) -> Result<(), Box<dyn Error>> {
-    let signal = SignalKind::from_raw(signum);
-    let mut sig = tokio::signal::unix::signal(signal)?;
+async fn handle_signal(signum: SignalKind, ascii_control_code: u8, writer: Arc<Mutex<OwnedWriteHalf>>) -> Result<(), String> {
+    let mut sig = tokio::signal::unix::signal(signum)
+        .map_err(|_| "Failed to initialize signal")?;
 
     loop {
         sig.recv().await;
         let mut guard = writer.lock().await;
-        guard.write(&[ascii_control_code]).await?; // write 1 byte: the ascii code
+        guard.write(&[ascii_control_code]).await
+            .map_err(|_| "Failed to transmit ASCII control code to socket.")?; // write 1 byte: the ascii code
     }
 }
