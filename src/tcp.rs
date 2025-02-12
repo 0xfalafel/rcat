@@ -1,7 +1,8 @@
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::{net::tcp::OwnedWriteHalf, signal::unix::SignalKind, sync::Mutex};
 
 use colored::Colorize;
+use std::error::Error;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::Cli;
 
@@ -98,4 +99,18 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// When a signal is received, transmit the corresponding ASCII control code
+/// over the TCP connection.
+/// Reference of ASCII control code: https://jvns.ca/ascii
+async fn handle_signal(signum: i32, ascii_control_code: u8, writer: Arc<Mutex<OwnedWriteHalf>>) -> Result<(), Box<dyn Error>> {
+    let signal = SignalKind::from_raw(signum);
+    let mut sig = tokio::signal::unix::signal(signal)?;
+
+    loop {
+        sig.recv().await;
+        let mut guard = writer.lock().await;
+        guard.write(&[ascii_control_code]).await?; // write 1 byte: the ascii code
+    }
 }
