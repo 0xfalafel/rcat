@@ -72,12 +72,9 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
                 },
                 Ok(0) => break,
                 Ok(ammount) => {
-                    {
-                        let mut guard = shared_writer.lock().await;
-                        guard.write(&buffer[..ammount]).await
-                            .map_err(|_| "Failed to write to socket")?;
-                        drop(guard);
-                    }
+                    let mut guard = shared_writer.lock().await;
+                    guard.write(&buffer[..ammount]).await
+                        .map_err(|_| "Failed to write to socket")?;
                 }
             }
         }
@@ -88,15 +85,8 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     let ctrlc_handler = tokio::spawn(async move {
         loop {
             tokio::signal::ctrl_c().await.unwrap();
-            // Your handler here
-            
-            {
-                println!("Handling signal in a tokio thread");
-                let mut guard = shared_writer2.lock().await;
-                println!("Got the mutex");
-                guard.write(b"\x03").await.unwrap();
-                // (*guard).flush().await.unwrap();
-            }
+            let mut guard = shared_writer2.lock().await;
+            guard.write(b"\x03").await.unwrap();
         }
     });
 
@@ -109,13 +99,3 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
     Ok(())
 }
-
-// /// Transmit Ctrl+C over the network
-// async fn wait_for_signal_impl() {
-
-//     tokio::select! {
-//         _ = tokio::signal::ctrl_c() => {
-
-//         }
-//     };
-// }
