@@ -2,7 +2,7 @@ use std::{future::Future, process::exit};
 use colored::Colorize;
 
 use clap::{error::Result, Parser};
-use ctrlc;
+// use ctrlc;
 
 // mod connect;
 mod server;
@@ -108,13 +108,13 @@ where
 fn main() {
     let cli = Cli::parse();
 
-    if cli.ignore_signals {
-        // Setup a handler for Ctrl-C that will do nothing
-        // when the signal is received
-        if let Err(_) = ctrlc::set_handler(move || {println!("Handling signal in initial handler");}) {
-            eprintln!("Error setting Ctrl-C handler");
-        }
-    }
+    // if cli.ignore_signals {
+    //     // Setup a handler for Ctrl-C that will do nothing
+    //     // when the signal is received
+    //     if let Err(_) = ctrlc::set_handler(move || {println!("Handling signal in initial handler");}) {
+    //         eprintln!("Error setting Ctrl-C handler");
+    //     }
+    // }
 
 
     let (host, port) = match get_host_port(&cli) {

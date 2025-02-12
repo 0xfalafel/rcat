@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc};//, Mutex};
 use tokio::sync::Mutex;
 
 use colored::Colorize;
@@ -19,15 +19,7 @@ pub async fn client(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     let (mut reader, mut writer) = client.into_split();
 
     let client_read = tokio::spawn(async move {
-        let mut stdout = tokio::io::stdout();
-
-        tokio::select! {
-            _ = tokio::io::copy(&mut reader, &mut stdout) => {},
-            _ = tokio::signal::ctrl_c() => {
-                println!("Handling signal in Client_read");
-                let _ = stdout.write(&[0x03]).await;
-            }
-        }
+        tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
     });
     
     let client_write = tokio::spawn(async move {
@@ -61,31 +53,50 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
     let (mut reader, mut writer) = handle.into_split();
 
-    let writer = Arc::new(tokio::sync::Mutex::new(writer));
-    let writer2 = writer.clone();
+    let shared_writer = Arc::new(Mutex::new(writer));
+    let shared_writer2 = shared_writer.clone();
     
     let client_read = tokio::spawn(async move {
         tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
     });
     
     let client_write = tokio::spawn(async move {
-        {
-            let mut guard = writer.lock().await;  // Note: .await instead of .unwrap()
-            tokio::io::copy(&mut tokio::io::stdin(), &mut *guard).await.unwrap();
+
+        let mut buffer: [u8; 1024] = [0; 1024];
+        let mut stdin = tokio::io::stdin();
+
+        loop {
+            match stdin.read(&mut buffer).await {
+                Err(_) => {
+                    return Err("Failed to read from stdin");
+                },
+                Ok(0) => break,
+                Ok(ammount) => {
+                    {
+                        let mut guard = shared_writer.lock().await;
+                        guard.write(&buffer[..ammount]).await
+                            .map_err(|_| "Failed to write to socket")?;
+                        drop(guard);
+                    }
+                }
+            }
         }
+
+        Ok(())
     });
 
-    let ctrlc_handler: tokio::task::JoinHandle<Result<(), String>> = spawn(async move {
-        tokio::select! {
-            _ = tokio::signal::ctrl_c() => {
-                {
-                    let mut soc = writer2.lock().await;
-                    println!("Handling signal in client");
-                    let _ = soc.write_all(&[0x03]);
-                    let _ = soc.flush();
-                }
-                Ok(())
-            }    
+    let ctrlc_handler = tokio::spawn(async move {
+        loop {
+            tokio::signal::ctrl_c().await.unwrap();
+            // Your handler here
+            
+            {
+                println!("Handling signal in a tokio thread");
+                let mut guard = shared_writer2.lock().await;
+                println!("Got the mutex");
+                guard.write(b"\x03").await.unwrap();
+                // (*guard).flush().await.unwrap();
+            }
         }
     });
 
