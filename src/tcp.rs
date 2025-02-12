@@ -1,8 +1,8 @@
-use std::sync::{Arc};//, Mutex};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use colored::Colorize;
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, select, spawn};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::Cli;
 
 pub async fn client(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
@@ -51,7 +51,7 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
         eprintln!("Connection received from {}", remote_addr.to_string().green());
     }
 
-    let (mut reader, mut writer) = handle.into_split();
+    let (mut reader, writer) = handle.into_split();
 
     let shared_writer = Arc::new(Mutex::new(writer));
     let shared_writer2 = shared_writer.clone();
