@@ -53,13 +53,14 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
     let (mut reader, writer) = handle.into_split();
 
-    let shared_writer = Arc::new(Mutex::new(writer));
-    let shared_writer2 = shared_writer.clone();
-    let writer3 = shared_writer.clone();
+    let writer = Arc::new(Mutex::new(writer));
 
-    let client_read = tokio::spawn(async move {
-        tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
-    });
+    // handle Ctrl-C
+    tokio::spawn(handle_signal(SignalKind::interrupt(), 3, writer.clone()));
+
+    // handle Ctrl-Z
+    tokio::spawn(handle_signal(SignalKind::from_raw(20), 26, writer.clone()));
+
     
     let client_write = tokio::spawn(async move {
 
@@ -73,7 +74,7 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
                 },
                 Ok(0) => break,
                 Ok(ammount) => {
-                    let mut guard = shared_writer.lock().await;
+                    let mut guard = writer.lock().await;
                     guard.write(&buffer[..ammount]).await
                         .map_err(|_| "Failed to write to socket")?;
                 }
@@ -83,12 +84,9 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
         Ok(())
     });
 
-    // handle Ctrl-C
-    tokio::spawn(handle_signal(SignalKind::interrupt(), 3, shared_writer2));
-
-    // handle Ctrl-Z
-    tokio::spawn(handle_signal(SignalKind::from_raw(20), 26, writer3));
-
+    let client_read = tokio::spawn(async move {
+        tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
+    });
 
     tokio::select! {
         _ = client_read  => {},
