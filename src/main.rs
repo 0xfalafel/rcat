@@ -36,6 +36,9 @@ struct Cli {
     #[arg(long)]
     pwn: bool,
 
+    #[arg(short='r', long)]
+    raw: bool,
+
     host: String,
     port: Option<String>
 }
@@ -119,7 +122,6 @@ fn main() {
     //         eprintln!("Error setting Ctrl-C handler");
     //     }
     // }
-
 
     let (host, port) = match get_host_port(&cli) {
         Err(err_msg) => {
