@@ -612,6 +612,7 @@ dependencies = [
  "colored",
  "ctrlc",
  "rand",
+ "terminal_size",
  "tokio",
  "tokio-rustls",
  "webpki-roots",
@@ -792,6 +793,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "terminal_size"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5352447f921fda68cf61b4101566c0bdb5104eff6804d0678e5227580ab6a4e9"
+dependencies = [
+ "rustix",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

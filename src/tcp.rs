@@ -2,6 +2,7 @@ use std::sync::Arc;
 use tokio::{net::tcp::OwnedWriteHalf, signal::unix::SignalKind, sync::Mutex};
 
 use colored::Colorize;
+use terminal_size::{Width, Height, terminal_size};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::Cli;
 
@@ -65,11 +66,25 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
         // set TERM env variable
         match writer.write_all(b"export TERM=xterm-256color\n").await {
-            Ok(_)  => {println!("Set XTERM variable")},
+            Ok(_)  => println!("Set XTERM variable"),
             Err(_) => eprintln!("Failed to set XTERM variable."),
         }
 
-        
+        // Set Terminal size with `stty`
+        let size = terminal_size();
+        if let Some((Width(w), Height(h))) = size {
+            println!("Terminal size: with={} , height={}", w, h);
+
+            // set the remote terminal size with stty
+            let stty_command = format!("stty rows {} cols {}\n", h, w);
+
+            match writer.write_all(stty_command.as_bytes()).await {
+                Ok(_)  => println!("Define terminal size with stty"),
+                Err(_) => eprintln!("Failed to write stty command to socket."),
+            }
+        } else {
+            eprintln!("Failed to obtain terminal size");
+        }
     }
 
 
