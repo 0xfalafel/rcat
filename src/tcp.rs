@@ -57,7 +57,10 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
     // Upgrade Reverse shell
     if cli.pwn {
-        upgrade_shell(&mut reader, &mut writer).await;
+        match upgrade_shell(&mut reader, &mut writer).await {
+            Ok(()) => {},
+            Err(error_msg) => eprintln!("{}", error_msg.red())
+        }
     }
 
     if cli.raw {
