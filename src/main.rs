@@ -36,8 +36,8 @@ struct Cli {
     #[arg(long)]
     pwn: bool,
 
-    #[arg(short='r', long)]
-    raw: bool,
+    // #[arg(short='r', long)]
+    // raw: bool,
 
     host: String,
     port: Option<String>

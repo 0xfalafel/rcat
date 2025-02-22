@@ -5,7 +5,6 @@ use colored::Colorize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::Cli;
 use crate::terminal_sheenanigans::upgrade_shell;
-use crossterm::terminal::enable_raw_mode;
 
 pub async fn client(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
@@ -62,14 +61,6 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
             Err(error_msg) => eprintln!("{}", error_msg.red())
         }
     }
-
-    if cli.raw {
-        match enable_raw_mode() {
-            Err(_) => eprintln!("{}", "Failed to enable raw mode".red()),
-            Ok(_) => {},
-        }
-    }
-
 
     let writer = Arc::new(Mutex::new(writer));
 
