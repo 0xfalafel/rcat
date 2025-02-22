@@ -2,7 +2,8 @@ use std::{future::Future, process::exit};
 use colored::Colorize;
 
 use clap::{error::Result, Parser};
-use terminal_sheenanigans::restore_terminal;
+use terminal_sheenanigans::{restore_terminal, end_on_signal};
+use tokio::{runtime::Runtime, signal::unix::SignalKind};
 // use ctrlc;
 
 // mod connect;
@@ -90,14 +91,10 @@ fn get_host_port(cli: &Cli) -> Result<(String, u16), String> {
 }
 
 
-fn async_run<F>(future: F, cli: &Cli) -> Result<(), String>
+fn async_run<F>(future: F, cli: &Cli, runtime: Runtime) -> Result<(), String>
 where 
     F: Future<Output = Result<(), String>>
 {
-    let runtime = tokio::runtime::Runtime::new().unwrap_or_else(|_|
-        {eprintln!("{}","Failed to initialize tokio runtime.".red()); exit(1)}
-    );
-
     let res = runtime.block_on(async {
         tokio::select! {
             res = future => res,
@@ -131,11 +128,22 @@ fn main() {
         Ok((host, port)) => (host, port)
     };
 
+    let runtime = tokio::runtime::Runtime::new().unwrap_or_else(|_|
+        {eprintln!("{}","Failed to initialize tokio runtime.".red()); exit(1)}
+    );
+
+    // Reset the terminal if the process is killed with `interrupt` `terminate`
+    if cli.pwn {
+        runtime.spawn(end_on_signal(SignalKind::interrupt()));
+        runtime.spawn(end_on_signal(SignalKind::terminate()));
+    }
+
+
     // We start a listener
     if cli.listen == true {
         let res = match cli {
-            ref cli if cli.udp => async_run(udp::udp_serve(&host, port), &cli),
-            _  => async_run(tcp::server(&host, port, &cli), &cli),
+            ref cli if cli.udp => async_run(udp::udp_serve(&host, port), &cli, runtime),
+            _  => async_run(tcp::server(&host, port, &cli), &cli, runtime),
         };
 
         if let Err(err_msg) = res {
@@ -145,9 +153,9 @@ fn main() {
     // We connect to a remote server
     } else {
         let res = match cli {
-            ref cli if cli.udp => async_run(udp::udp_connect(&host, port), &cli),
-            ref cli if cli.tls => async_run(tls::connect_tls(&host, port, &cli), &cli),
-            _ => async_run(tcp::client(&host, port, &cli), &cli),
+            ref cli if cli.udp => async_run(udp::udp_connect(&host, port), &cli, runtime),
+            ref cli if cli.tls => async_run(tls::connect_tls(&host, port, &cli), &cli, runtime),
+            _ => async_run(tcp::client(&host, port, &cli), &cli, runtime),
         };
 
         if let Err(err_msg) = res {

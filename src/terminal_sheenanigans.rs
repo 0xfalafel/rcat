@@ -1,5 +1,8 @@
+use std::process::exit;
+
 use tokio::net::tcp::{OwnedWriteHalf, OwnedReadHalf};
 use tokio::io::AsyncWriteExt;
+use tokio::signal::unix::SignalKind;
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
@@ -42,7 +45,17 @@ pub async fn upgrade_shell(_reader: &mut OwnedReadHalf, writer: &mut OwnedWriteH
 
 pub fn restore_terminal() {
     match disable_raw_mode() {
-        Ok(_) => {println!("Successfully restored terminal")},
+        Ok(_) => {},
         Err(_) => eprintln!("failed to restore terminal"),
     }
+}
+
+pub async fn end_on_signal(signum: SignalKind) -> Result<(), String> {
+    let mut sig = tokio::signal::unix::signal(signum)
+        .map_err(|_| "Failed to initialize signal")?;
+
+    sig.recv().await;
+    restore_terminal();
+
+    exit(0);
 }
