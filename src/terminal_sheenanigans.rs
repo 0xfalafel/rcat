@@ -1,7 +1,7 @@
 use tokio::net::tcp::{OwnedWriteHalf, OwnedReadHalf};
 use tokio::io::AsyncWriteExt;
 use terminal_size::{Width, Height, terminal_size};
-use crossterm::terminal::enable_raw_mode;
+use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 pub async fn upgrade_shell(_reader: &mut OwnedReadHalf, writer: &mut OwnedWriteHalf) -> Result<(), String> {
     // launch /bin/bash with python
@@ -38,4 +38,11 @@ pub async fn upgrade_shell(_reader: &mut OwnedReadHalf, writer: &mut OwnedWriteH
     }
 
     Ok(())
+}
+
+pub fn restore_terminal() {
+    match disable_raw_mode() {
+        Ok(_) => {println!("Successfully restored terminal")},
+        Err(_) => eprintln!("failed to restore terminal"),
+    }
 }

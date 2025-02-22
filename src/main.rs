@@ -2,6 +2,7 @@ use std::{future::Future, process::exit};
 use colored::Colorize;
 
 use clap::{error::Result, Parser};
+use terminal_sheenanigans::restore_terminal;
 // use ctrlc;
 
 // mod connect;
@@ -133,7 +134,7 @@ fn main() {
     // We start a listener
     if cli.listen == true {
         let res = match cli {
-            cli if cli.udp => async_run(udp::udp_serve(&host, port), &cli),
+            ref cli if cli.udp => async_run(udp::udp_serve(&host, port), &cli),
             _  => async_run(tcp::server(&host, port, &cli), &cli),
         };
 
@@ -144,13 +145,17 @@ fn main() {
     // We connect to a remote server
     } else {
         let res = match cli {
-            cli if cli.udp => async_run(udp::udp_connect(&host, port), &cli),
-            cli if cli.tls => async_run(tls::connect_tls(&host, port, &cli), &cli),
+            ref cli if cli.udp => async_run(udp::udp_connect(&host, port), &cli),
+            ref cli if cli.tls => async_run(tls::connect_tls(&host, port, &cli), &cli),
             _ => async_run(tcp::client(&host, port, &cli), &cli),
         };
 
         if let Err(err_msg) = res {
             eprintln!("{}", err_msg)
         }
+    }
+
+    if cli.pwn {
+        restore_terminal();
     }
 }
