@@ -63,13 +63,6 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     }
 
     let writer = Arc::new(Mutex::new(writer));
-
-    // handle Ctrl-C
-    // tokio::spawn(handle_signal(SignalKind::interrupt(), 3, writer.clone()));
-
-    // handle Ctrl-Z
-    // tokio::spawn(handle_signal(SignalKind::from_raw(20), 26, writer.clone()));
-
     
     let client_write = tokio::spawn(async move {
 

@@ -6,8 +6,6 @@ use terminal_sheenanigans::{restore_terminal, end_on_signal};
 use tokio::{runtime::Runtime, signal::unix::SignalKind};
 use tokio_util::sync::CancellationToken;
 
-// mod connect;
-mod server;
 mod tcp;
 mod udp;
 mod tls;
@@ -37,9 +35,6 @@ struct Cli {
 
     #[arg(long)]
     pwn: bool,
-
-    // #[arg(short='r', long)]
-    // raw: bool,
 
     host: String,
     port: Option<String>
@@ -113,14 +108,6 @@ where
 
 fn main() {
     let cli = Cli::parse();
-
-    // if cli.ignore_signals {
-    //     // Setup a handler for Ctrl-C that will do nothing
-    //     // when the signal is received
-    //     if let Err(_) = ctrlc::set_handler(move || {println!("Handling signal in initial handler");}) {
-    //         eprintln!("Error setting Ctrl-C handler");
-    //     }
-    // }
 
     let (host, port) = match get_host_port(&cli) {
         Err(err_msg) => {
