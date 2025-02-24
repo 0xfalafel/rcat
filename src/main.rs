@@ -4,6 +4,7 @@ use colored::Colorize;
 use clap::{error::Result, Parser};
 use terminal_sheenanigans::{restore_terminal, end_on_signal};
 use tokio::{runtime::Runtime, signal::unix::SignalKind};
+use tokio_util::sync::CancellationToken;
 // use ctrlc;
 
 // mod connect;
@@ -128,16 +129,17 @@ fn main() {
         Ok((host, port)) => (host, port)
     };
 
-    let runtime = tokio::runtime::Runtime::new().unwrap_or_else(|_|
-        {eprintln!("{}","Failed to initialize tokio runtime.".red()); exit(1)}
-    );
+    let runtime = tokio::runtime::Runtime::new().unwrap_or_else(|_| {
+        eprintln!("{}","Failed to initialize tokio runtime.".red()); exit(1)
+    });
+
+    let token = CancellationToken::new();
 
     // Reset the terminal if the process is killed with `interrupt` `terminate`
     if cli.pwn {
-        runtime.spawn(end_on_signal(SignalKind::interrupt()));
-        runtime.spawn(end_on_signal(SignalKind::terminate()));
+        runtime.spawn(end_on_signal(SignalKind::interrupt(), token.clone()));
+        runtime.spawn(end_on_signal(SignalKind::terminate(), token.clone()));
     }
-
 
     // We start a listener
     if cli.listen == true {
