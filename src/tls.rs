@@ -1,17 +1,15 @@
-use std::sync::Arc;
+use std::{error::Error, sync::Arc};
 use colored::Colorize;
 use tokio::{io::split, net::TcpStream};
 
-use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::ServerName, SignatureScheme}, TlsConnector};
+use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::{pem::PemObject, CertificateDer, ServerName}, RootCertStore, SignatureScheme}, TlsConnector};
 use tokio_rustls::rustls::client::danger::{ServerCertVerified, ServerCertVerifier};
 use crate::Cli;
 
 pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
-    let mut root_cert_store = rustls::RootCertStore::empty();
-
-    // trust certificates accepted by Mozzila
-    root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+    let root_cert_store = initialize_ca(&cli)
+        .map_err(|_| "Failed to read Certificate Authority file")?;
 
     let mut config = rustls::ClientConfig::builder()
         .with_root_certificates(root_cert_store)
@@ -59,6 +57,23 @@ pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String>
     }    
 
     Ok(())
+}
+
+
+/// Initilaize certificate authorithy
+fn initialize_ca(cli: &Cli) -> Result<RootCertStore, Box<dyn Error + Send + Sync + 'static>> {
+    let mut root_cert_store = rustls::RootCertStore::empty();
+
+    if let Some(cafile) = &cli.cafile {
+        for cert in CertificateDer::pem_file_iter(cafile)? {
+            root_cert_store.add(cert?)?;
+        }        
+    } else {
+        // trust certificates accepted by Mozzila
+        root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());        
+    }
+
+    Ok(root_cert_store)
 }
 
 

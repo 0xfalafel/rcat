@@ -1,4 +1,4 @@
-use std::{future::Future, process::exit};
+use std::{future::Future, path::PathBuf, process::exit};
 use colored::Colorize;
 
 use clap::{error::Result, Parser};
@@ -35,6 +35,10 @@ struct Cli {
 
     #[arg(long)]
     pwn: bool,
+
+    /// cafile
+    #[arg(long)]
+    cafile: Option<PathBuf>,
 
     host: String,
     port: Option<String>
