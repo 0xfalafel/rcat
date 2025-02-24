@@ -58,14 +58,14 @@ pub fn restore_terminal() {
     }
 }
 
-pub async fn end_on_signal(signum: SignalKind, cancellation_token: CancellationToken) -> Result<(), String> {
+pub async fn end_on_signal(signum: SignalKind, cancel_token: CancellationToken) -> Result<(), String> {
     let mut sig = tokio::signal::unix::signal(signum)
         .map_err(|_| "Failed to initialize signal")?;
 
     sig.recv().await;
     restore_terminal();
 
-    cancellation_token.cancel();
+    cancel_token.cancel();
 
     exit(0);
 }
