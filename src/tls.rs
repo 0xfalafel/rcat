@@ -60,7 +60,7 @@ pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String>
 }
 
 
-/// Initilaize certificate authorithy
+/// Initilaize the Root Certificates that provides a root of trust
 fn initialize_ca(cli: &Cli) -> Result<RootCertStore, Box<dyn Error + Send + Sync + 'static>> {
     let mut root_cert_store = rustls::RootCertStore::empty();
 
