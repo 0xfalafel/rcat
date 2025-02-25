@@ -77,6 +77,18 @@ fn initialize_ca(cli: &Cli) -> Result<RootCertStore, Box<dyn Error + Send + Sync
 }
 
 
+/// Handle connections with a TLS server
+pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
+
+    let addr = format!("{}:{}", host, port);
+
+    println!("Cert: {:?}", cli.cert);
+    println!("Private Key: {:?}", cli.key);
+
+    Ok(())
+}
+
+
 /*
     A Custom TLS verifier, to ignore TLS verification with the `-k` or `--insecure` option
 */

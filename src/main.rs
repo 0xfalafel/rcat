@@ -39,6 +39,17 @@ struct Cli {
     /// cafile
     #[arg(long)]
     cafile: Option<PathBuf>,
+    
+    // Options for the TLS server
+
+    /// Certificate used by the TLS server
+    #[arg(long)]
+    cert: Option<PathBuf>,
+
+    /// Private key used by the TLS server
+    #[arg(long)]
+    key: Option<PathBuf>,
+
 
     host: String,
     port: Option<String>
@@ -136,6 +147,7 @@ fn main() {
     if cli.listen == true {
         let res = match cli {
             ref cli if cli.udp => async_run(udp::udp_serve(&host, port), &cli, runtime, token.clone()),
+            ref cli if cli.tls => async_run(tls::server(&host, port, &cli), &cli, runtime, token.clone()),
             _  => async_run(tcp::server(&host, port, &cli), &cli, runtime, token.clone()),
         };
 
