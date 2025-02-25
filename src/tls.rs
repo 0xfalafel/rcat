@@ -1,8 +1,8 @@
-use std::{error::Error, sync::Arc};
+use std::{error::Error, path::PathBuf, sync::Arc};
 use colored::Colorize;
 use tokio::{io::split, net::TcpStream};
 
-use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::{pem::PemObject, CertificateDer, ServerName}, RootCertStore, SignatureScheme}, TlsConnector};
+use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer, ServerName}, RootCertStore, ServerConfig, SignatureScheme}, TlsConnector};
 use tokio_rustls::rustls::client::danger::{ServerCertVerified, ServerCertVerifier};
 use crate::Cli;
 
@@ -82,10 +82,38 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
 
     let addr = format!("{}:{}", host, port);
 
-    println!("Cert: {:?}", cli.cert);
-    println!("Private Key: {:?}", cli.key);
+    if cli.cert.is_none() {
+        return Err(String::from("A certificate (--cert) is required to create a TLS handler."))
+    }
+    
+    if cli.key.is_none() {
+        return Err(String::from("A private key (--key) is required to create a TLS handler."))
+    }
+
+    let server_config = build_tls_server_config(cli.cert.as_ref().unwrap(), cli.key.as_ref().unwrap())?;
+
 
     Ok(())
+}
+
+
+fn build_tls_server_config(certificate: &PathBuf, private_key_file: &PathBuf) -> Result<ServerConfig, String> {
+
+    // Read the private key
+    let private_key = match PrivateKeyDer::from_pem_file(private_key_file) {
+        Ok(private_key) => private_key,
+        Err(_) => return Err("Failed to parse Private Key file".to_string())
+    };
+
+    // Read the certificate file
+    
+
+
+    let config = rustls::ServerConfig::builder()
+    .with_no_client_auth()
+    .with_single_cert(certs, private_key)?;
+
+    Err("Failed to initalize the TLS Server configuration".to_string())
 }
 
 
