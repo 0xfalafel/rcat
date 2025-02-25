@@ -97,21 +97,46 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
 }
 
 
-fn build_tls_server_config(certificate: &PathBuf, private_key_file: &PathBuf) -> Result<ServerConfig, String> {
+fn build_tls_server_config(cert_path: &PathBuf, private_key_path: &PathBuf) -> Result<ServerConfig, String> {
 
     // Read the private key
-    let private_key = match PrivateKeyDer::from_pem_file(private_key_file) {
+    let private_key = match PrivateKeyDer::from_pem_file(private_key_path) {
         Ok(private_key) => private_key,
         Err(_) => return Err("Failed to parse Private Key file".to_string())
     };
 
-    // Read the certificate file
+
+    // Load certificates
+    // let cert_file = File::open(cert_path)?;
+    // let mut reader = BufReader::new(cert_file);
     
+    // let certs = match CertificateDer::pem_file_iter(&mut reader) {
+    //     Ok(certs_iter) => certs_iter
+    //         .map(|cert_result| {
+    //             cert_result.map_err(|_| "Failed to parse certificate file".to_string())
+    //         })
+    //         .collect::<Result<Vec<_>, _>>()?,
+    //     Err(e) => return Err(AppError::CertificateError(e.to_string())),
+    // };
+
+
+    // Read the certificate file
+    let certs = match CertificateDer::pem_file_iter(cert_path) {
+        Ok(certs) => certs,
+        Err(_) => return Err("Failed to parse Certificate file.".to_string())
+    };
+
+    let certs = certs
+        .map(|cert| {
+            cert.map_err(|_| "Failed to parse certificate file".to_string())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
 
     let config = rustls::ServerConfig::builder()
-    .with_no_client_auth()
-    .with_single_cert(certs, private_key)?;
+        .with_no_client_auth()
+        .with_single_cert(certs, private_key)
+        .map_err(|_| "Failed to initialize TLS Server configuration")?;
 
     Err("Failed to initalize the TLS Server configuration".to_string())
 }
