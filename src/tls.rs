@@ -90,8 +90,47 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
         return Err(String::from("A private key (--key) is required to create a TLS handler."))
     }
 
-    let server_config = build_tls_server_config(cli.cert.as_ref().unwrap(), cli.key.as_ref().unwrap())?;
+    let tls_config = build_tls_server_config(
+        cli.cert.as_ref().unwrap(),
+        cli.key.as_ref().unwrap()
+    )?;
 
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .map_err(|_| format!("failed to bind {}", addr))?;
+
+    // Info message on successful bind
+    if !cli.silent {
+        eprintln!("Listening on {} (tcp)", addr.blue());
+    }
+
+    // Accept the connection
+    let (tcp_stream, remote_addr) = listener.accept().await
+        .map_err(|_| "failed to accept connection")?;
+
+    if !cli.silent {
+        eprintln!("Connection received from {}", remote_addr.to_string().green());
+    }
+
+    let tls_acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(tls_config));
+    let stream = tls_acceptor.accept(tcp_stream)
+        .await
+        .map_err(|_| "Failed to establish TLS connection.")?;
+
+    let (mut reader, mut writer) = split(stream);
+
+    let client_read = tokio::spawn(async move {
+        tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
+    });
+    
+    let client_write = tokio::spawn(async move {
+        tokio::io::copy(&mut tokio::io::stdin(), &mut writer).await
+    });
+
+    tokio::select! {
+        _ = client_read  => {},
+        _ = client_write => {}
+    }    
 
     Ok(())
 }
@@ -138,7 +177,7 @@ fn build_tls_server_config(cert_path: &PathBuf, private_key_path: &PathBuf) -> R
         .with_single_cert(certs, private_key)
         .map_err(|_| "Failed to initialize TLS Server configuration")?;
 
-    Err("Failed to initalize the TLS Server configuration".to_string())
+    Ok(config)
 }
 
 
