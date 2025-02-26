@@ -144,21 +144,6 @@ fn build_tls_server_config(cert_path: &PathBuf, private_key_path: &PathBuf) -> R
         Err(_) => return Err("Failed to parse Private Key file".to_string())
     };
 
-
-    // Load certificates
-    // let cert_file = File::open(cert_path)?;
-    // let mut reader = BufReader::new(cert_file);
-    
-    // let certs = match CertificateDer::pem_file_iter(&mut reader) {
-    //     Ok(certs_iter) => certs_iter
-    //         .map(|cert_result| {
-    //             cert_result.map_err(|_| "Failed to parse certificate file".to_string())
-    //         })
-    //         .collect::<Result<Vec<_>, _>>()?,
-    //     Err(e) => return Err(AppError::CertificateError(e.to_string())),
-    // };
-
-
     // Read the certificate file
     let certs = match CertificateDer::pem_file_iter(cert_path) {
         Ok(certs) => certs,

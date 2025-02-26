@@ -67,18 +67,6 @@ fn get_port(s: &str) -> Result<u16, String> {
     }
 }
 
-#[allow(unused)]
-async fn run() -> Result<(), String> {
-    let mut stdin = tokio::io::stdin();
-    let mut stdout = tokio::io::stdout();
-
-    tokio::spawn(async move {
-        tokio::io::copy(&mut stdin, &mut stdout).await.unwrap();
-    }).await.unwrap();
-
-    Ok(())
-}
-
 fn get_host_port(cli: &Cli) -> Result<(String, u16), String> {
 
     // We have a port passed as an argument
