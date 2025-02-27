@@ -15,28 +15,34 @@ mod terminal_sheenanigans;
 //#[command(author, version, about, long_about = None)]
 //#[command(propagate_version = true)]
 struct Cli {
+    /// Start a server listening for a connection.
     #[arg(short='l')]
-    listen: bool,
+    listen: bool, 
 
+    /// Use TLS (to connect to a remote host, or with -l to start a TLS server).
     #[arg(short='t', long)]
     tls: bool,
 
+    /// Use UDP (to connect to a remote host, or with -l to start a server).
     #[arg(short='u', long)]
     udp: bool,
 
+    /// Remove information messages.
     #[arg(short='s', long)]
     silent: bool,
 
+    /// Ignore Certificate errors when connecting with --tls.
     #[arg(short='k', long)]
     insecure: bool,
 
     #[arg(short='S', long)]
     ignore_signals: bool,
 
+    /// Automagicaly upgrade a Reverse Shell to a fully interactive Shell. 
     #[arg(long)]
     pwn: bool,
 
-    /// cafile
+    /// Certificate autority to use to valide the remote host when connecting with TLS.
     #[arg(long)]
     cafile: Option<PathBuf>,
     
