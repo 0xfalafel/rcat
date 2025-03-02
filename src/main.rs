@@ -10,6 +10,7 @@ mod tcp;
 mod udp;
 mod tls;
 mod terminal_sheenanigans;
+mod common;
 
 #[derive(Parser,Default,Debug)]
 //#[command(author, version, about, long_about = None)]

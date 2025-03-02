@@ -4,7 +4,7 @@ use tokio::{io::split, net::TcpStream};
 
 use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer, ServerName}, RootCertStore, ServerConfig, SignatureScheme}, TlsConnector};
 use tokio_rustls::rustls::client::danger::{ServerCertVerified, ServerCertVerifier};
-use crate::{terminal_sheenanigans::upgrade_shell, Cli};
+use crate::{common::read_write, Cli};
 
 pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
@@ -41,31 +41,9 @@ pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String>
         eprintln!("Connected with TLS to {}", addr.green());
     }
 
-    let (mut reader, mut writer) = split(stream);
+    let (reader, writer) = split(stream);
 
-    // Upgrade Reverse shell
-    if cli.pwn {
-        match upgrade_shell(&mut reader, &mut writer).await {
-            Ok(()) => {},
-            Err(error_msg) => eprintln!("{}", error_msg.red())
-        }
-    }
-
-
-    let client_read = tokio::spawn(async move {
-        tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
-    });
-    
-    let client_write = tokio::spawn(async move {
-        tokio::io::copy(&mut tokio::io::stdin(), &mut writer).await
-    });
-
-    tokio::select! {
-        _ = client_read  => {},
-        _ = client_write => {}
-    }    
-
-    Ok(())
+    read_write(reader, writer, cli).await
 }
 
 
@@ -126,22 +104,9 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
         .await
         .map_err(|_| "Failed to establish TLS connection.")?;
 
-    let (mut reader, mut writer) = split(stream);
-
-    let client_read = tokio::spawn(async move {
-        tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
-    });
+    let (reader, writer) = split(stream);
     
-    let client_write = tokio::spawn(async move {
-        tokio::io::copy(&mut tokio::io::stdin(), &mut writer).await
-    });
-
-    tokio::select! {
-        _ = client_read  => {},
-        _ = client_write => {}
-    }    
-
-    Ok(())
+    read_write(reader, writer, cli).await
 }
 
 
