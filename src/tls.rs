@@ -4,7 +4,7 @@ use tokio::{io::split, net::TcpStream};
 
 use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer, ServerName}, RootCertStore, ServerConfig, SignatureScheme}, TlsConnector};
 use tokio_rustls::rustls::client::danger::{ServerCertVerified, ServerCertVerifier};
-use crate::Cli;
+use crate::{terminal_sheenanigans::upgrade_shell, Cli};
 
 pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
 
@@ -42,6 +42,15 @@ pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String>
     }
 
     let (mut reader, mut writer) = split(stream);
+
+    // Upgrade Reverse shell
+    if cli.pwn {
+        match upgrade_shell(&mut reader, &mut writer).await {
+            Ok(()) => {},
+            Err(error_msg) => eprintln!("{}", error_msg.red())
+        }
+    }
+
 
     let client_read = tokio::spawn(async move {
         tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await

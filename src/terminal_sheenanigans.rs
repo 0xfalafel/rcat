@@ -1,14 +1,16 @@
 use std::process::exit;
 
-use tokio::net::tcp::{OwnedWriteHalf, OwnedReadHalf};
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncWriteExt, ReadHalf, WriteHalf};
 use tokio::signal::unix::SignalKind;
 use tokio_util::sync::CancellationToken;
 
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
-pub async fn upgrade_shell(_reader: &mut OwnedReadHalf, writer: &mut OwnedWriteHalf) -> Result<(), String> {
+pub async fn upgrade_shell<T>(_reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
+where 
+    T: AsyncWriteExt
+{
     // launch /bin/bash with python
     match writer.write_all(b"python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n").await {
         Ok(_)  => {},

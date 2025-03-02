@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use tokio::{net::tcp::OwnedWriteHalf, signal::unix::SignalKind, sync::Mutex};
+use tokio::{net::tcp::OwnedWriteHalf, signal::unix::SignalKind, sync::Mutex, io::split};
 
 use colored::Colorize;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -17,7 +17,7 @@ pub async fn client(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
         eprintln!("Connected to {}", addr.green())
     }
 
-    let (mut reader, mut writer) = client.into_split();
+    let (mut reader, mut writer) = split(client);
 
     let client_read = tokio::spawn(async move {
         tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
@@ -52,7 +52,7 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
         eprintln!("Connection received from {}", remote_addr.to_string().green());
     }
 
-    let (mut reader, mut writer) = handle.into_split();
+    let (mut reader, mut writer) = split(handle);
 
     // Upgrade Reverse shell
     if cli.pwn {
