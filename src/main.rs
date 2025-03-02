@@ -36,9 +36,6 @@ struct Cli {
     #[arg(short='k', long)]
     insecure: bool,
 
-    #[arg(short='S', long)]
-    ignore_signals: bool,
-
     /// Automagicaly upgrade a Reverse Shell to a fully interactive Shell. 
     #[arg(long)]
     pwn: bool,
@@ -96,7 +93,7 @@ fn get_host_port(cli: &Cli) -> Result<(String, u16), String> {
 }
 
 
-fn async_run<F>(future: F, cli: &Cli, runtime: Runtime, token: CancellationToken) -> Result<(), String>
+fn async_run<F>(future: F, runtime: Runtime, token: CancellationToken) -> Result<(), String>
 where 
     F: Future<Output = Result<(), String>>
 {
@@ -104,7 +101,6 @@ where
         tokio::select! {
             res = future => res,
             _ = token.cancelled() => Ok(()),
-            _ = tokio::signal::ctrl_c() => Ok(()) // if -S, don't close on Ctrl-C
         }
     });
 
@@ -141,9 +137,9 @@ fn main() {
     // We start a listener
     if cli.listen == true {
         let res = match cli {
-            ref cli if cli.udp => async_run(udp::udp_serve(&host, port), &cli, runtime, token.clone()),
-            ref cli if cli.tls => async_run(tls::server(&host, port, &cli), &cli, runtime, token.clone()),
-            _  => async_run(tcp::server(&host, port, &cli), &cli, runtime, token.clone()),
+            ref cli if cli.udp => async_run(udp::udp_serve(&host, port), runtime, token.clone()),
+            ref cli if cli.tls => async_run(tls::server(&host, port, &cli), runtime, token.clone()),
+            _  => async_run(tcp::server(&host, port, &cli), runtime, token.clone()),
         };
 
         if let Err(err_msg) = res {
@@ -153,9 +149,9 @@ fn main() {
     // We connect to a remote server
     } else {
         let res = match cli {
-            ref cli if cli.udp => async_run(udp::udp_connect(&host, port), &cli, runtime, token.clone()),
-            ref cli if cli.tls => async_run(tls::connect_tls(&host, port, &cli), &cli, runtime, token.clone()),
-            _ => async_run(tcp::client(&host, port, &cli), &cli, runtime, token.clone()),
+            ref cli if cli.udp => async_run(udp::udp_connect(&host, port), runtime, token.clone()),
+            ref cli if cli.tls => async_run(tls::connect_tls(&host, port, &cli), runtime, token.clone()),
+            _ => async_run(tcp::client(&host, port, &cli), runtime, token.clone()),
         };
 
         if let Err(err_msg) = res {
