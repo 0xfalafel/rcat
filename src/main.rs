@@ -104,7 +104,7 @@ where
         tokio::select! {
             res = future => res,
             _ = token.cancelled() => Ok(()),
-            _ = tokio::signal::ctrl_c(), if !cli.ignore_signals => {println!("End process"); Ok(())} // if -S, don't close on Ctrl-C
+            _ = tokio::signal::ctrl_c(), if !cli.ignore_signals => {Ok(())} // if -S, don't close on Ctrl-C
         }
     });
 
