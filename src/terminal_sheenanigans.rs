@@ -1,8 +1,11 @@
 use std::process::exit;
 
 use tokio::io::{AsyncWriteExt, AsyncReadExt, ReadHalf, WriteHalf};
-use tokio::signal::unix::SignalKind;
 use tokio_util::sync::CancellationToken;
+
+#[cfg(unix)]
+use tokio::signal::unix::SignalKind;
+
 
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
@@ -60,14 +63,42 @@ pub fn restore_terminal() {
     }
 }
 
-pub async fn end_on_signal(signum: SignalKind, cancel_token: CancellationToken) -> Result<(), String> {
-    let mut sig = tokio::signal::unix::signal(signum)
-        .map_err(|_| "Failed to initialize signal")?;
+#[cfg(unix)]
+pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String> {
 
-    sig.recv().await;
-    restore_terminal();
+    let mut sig_interrupt = tokio::signal::unix::signal(SignalKind::interrupt())
+        .map_err(|_| "Failed to initialize interrupt signal handler")?;
+
+    let mut sig_terminate = tokio::signal::unix::signal(SignalKind::terminate())
+        .map_err(|_| "Failed to initialize terminate signal handler")?;
+
+    tokio::select! { // if we received one of the signals
+        _ = sig_interrupt.recv() => {},
+        _ = sig_terminate.recv() => {},
+    }
 
     cancel_token.cancel();
+    restore_terminal();
+
+    exit(0);
+}
+
+#[cfg(windows)]
+pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String> {
+
+    let mut sig_interrupt = tokio::signal::unix::signal(SignalKind::interrupt())
+        .map_err(|_| "Failed to initialize interrupt signal handler")?;
+
+    let mut sig_terminate = tokio::signal::unix::signal(SignalKind::terminate())
+        .map_err(|_| "Failed to initialize terminate signal handler")?;
+
+    tokio::select! { // if we received one of the signals
+        _ = sig_interrupt.recv() => {},
+        _ = sig_terminate.recv() => {},
+    }
+
+    cancel_token.cancel();
+    restore_terminal();
 
     exit(0);
 }

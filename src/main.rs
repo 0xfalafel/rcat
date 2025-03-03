@@ -3,7 +3,7 @@ use colored::Colorize;
 
 use clap::{error::Result, Parser};
 use terminal_sheenanigans::{restore_terminal, end_on_signal};
-use tokio::{runtime::Runtime, signal::unix::SignalKind};
+use tokio::runtime::Runtime;
 use tokio_util::sync::CancellationToken;
 
 mod tcp;
@@ -135,8 +135,7 @@ fn main() {
 
     // Reset the terminal if the process is killed with `interrupt` `terminate`
     if cli.pwn {
-        runtime.spawn(end_on_signal(SignalKind::interrupt(), token.clone()));
-        runtime.spawn(end_on_signal(SignalKind::terminate(), token.clone()));
+        runtime.spawn(end_on_signal(token.clone()));
     }
 
     // We start a listener
