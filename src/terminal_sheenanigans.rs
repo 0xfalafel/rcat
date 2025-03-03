@@ -6,7 +6,6 @@ use tokio_util::sync::CancellationToken;
 #[cfg(unix)]
 use tokio::signal::unix::SignalKind;
 
-
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
@@ -86,16 +85,10 @@ pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String
 #[cfg(windows)]
 pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String> {
 
-    let mut sig_interrupt = tokio::signal::unix::signal(SignalKind::interrupt())
+    let mut sig_ctrlc = tokio::signal::windows::ctrl_c()
         .map_err(|_| "Failed to initialize interrupt signal handler")?;
 
-    let mut sig_terminate = tokio::signal::unix::signal(SignalKind::terminate())
-        .map_err(|_| "Failed to initialize terminate signal handler")?;
-
-    tokio::select! { // if we received one of the signals
-        _ = sig_interrupt.recv() => {},
-        _ = sig_terminate.recv() => {},
-    }
+    sig_ctrlc.recv().await;
 
     cancel_token.cancel();
     restore_terminal();
