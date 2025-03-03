@@ -88,7 +88,7 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
 
     // Info message on successful bind
     if !cli.silent {
-        eprintln!("Listening on {} (tcp)", addr.blue());
+        eprintln!("Listening on {} (tcp)", addr.cyan());
     }
 
     // Accept the connection

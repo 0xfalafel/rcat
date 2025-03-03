@@ -29,7 +29,7 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
     
     // Info message on successful bind
     if !cli.silent {
-        eprintln!("Listening on {} (tcp)", addr.blue());
+        eprintln!("Listening on {} (tcp)", addr.cyan());
     }
 
     let (handle, remote_addr) = listener.accept().await.map_err(|_| "failed to accept connection")?;
