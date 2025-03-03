@@ -24,11 +24,8 @@ where
     // Set Terminal size with `stty`
     let size = terminal_size();
     if let Some((Width(w), Height(h))) = size {
-        println!("Terminal size: with={} , height={}", w, h);
-        
         // set the remote terminal size with stty
         let stty_command = format!("stty rows {} cols {}\n", h, w);
-        println!("stty command: {}", stty_command);
         
         match writer.write_all(stty_command.as_bytes()).await {
             Ok(_)  => {},
