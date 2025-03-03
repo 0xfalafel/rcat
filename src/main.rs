@@ -11,6 +11,7 @@ mod udp;
 mod tls;
 mod terminal_sheenanigans;
 mod common;
+mod newline;
 
 #[derive(Parser,Default,Debug)]
 //#[command(author, version, about, long_about = None)]
@@ -27,6 +28,10 @@ struct Cli {
     /// Use UDP (to connect to a remote host, or with -l to start a server).
     #[arg(short='u', long)]
     udp: bool,
+
+    /// Replace '\n' with '\r\n'
+    #[arg(short='c', long)]
+    crlf: bool,
 
     /// Remove information messages.
     #[arg(short='s', long)]

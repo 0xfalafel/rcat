@@ -1,9 +1,8 @@
-use tokio::io::{ReadHalf, WriteHalf, AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
 use std::marker::Send;
 use colored::Colorize;
 
-
-use crate::{terminal_sheenanigans::upgrade_shell, Cli};
+use crate::{newline::NewlineReplacer, terminal_sheenanigans::upgrade_shell, Cli};
 
 /// Copy from stdin to network, and from network to stdout.
 /// It will also run upgrade_shell() if specified
@@ -24,9 +23,19 @@ where
         tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
     });
     
-    // Copy from stdin to network socket
+    
+    // We copy from stdin to the network socket.        
+    // If cli.crlf flag is present: we copy from the NewlineReplacer.
+
+    let mut replacer = NewlineReplacer::new(tokio::io::stdin());
+
+    let copy_from_stdin = match cli.crlf {
+        false => tokio::io::copy(&mut tokio::io::stdin(), &mut writer).await,
+        true =>  tokio::io::copy(&mut replacer, &mut writer).await,
+    };
+
     let client_write = tokio::spawn(async move {
-        tokio::io::copy(&mut tokio::io::stdin(), &mut writer).await
+        copy_from_stdin
     });
 
     tokio::select! {
