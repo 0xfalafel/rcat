@@ -40,7 +40,7 @@ pub async fn udp_connect(host: &String, port: u16, cli: &Cli) -> Result<(), Stri
         .map_err(|_| format!("failed to connect to {}", addr))?;
 
     if !cli.silent {
-        eprintln!("Connected to {}", addr.green())
+        eprintln!("Connected to {} (udp)", addr.green())
     }
     
     let mut stdin = stdin();
@@ -101,7 +101,7 @@ pub async fn udp_serve(host: &String, port: u16, cli: &Cli) -> Result<(), String
 
     // Info message on successful bind
     if !cli.silent {
-        eprintln!("Listening on {} (tcp)", addr.cyan());
+        eprintln!("Listening on {} (udp)", addr.cyan());
     }
 
 
