@@ -134,9 +134,7 @@ fn main() {
     let token = CancellationToken::new();
 
     // Reset the terminal if the process is killed with `interrupt` `terminate`
-    if cli.pwn {
-        runtime.spawn(end_on_signal(token.clone()));
-    }
+    runtime.spawn(end_on_signal(token.clone()));
 
     // We start a listener
     if cli.listen == true {
