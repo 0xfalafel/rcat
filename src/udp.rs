@@ -2,8 +2,11 @@ use tokio::io::{stdin, stdout};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UdpSocket;
 use tokio::select;
+
+use colored::Colorize;
 use rand::Rng;
 
+use crate::Cli;
 
 /// Return an UDP socket binding a random port above 49152
 /// (ephemeral_port) and listening to 0.0.0.0
@@ -27,7 +30,7 @@ async fn bind_random_port() -> Result<UdpSocket, String> {
     Err("Failed to bind port".to_string())
 }
 
-pub async fn udp_connect(host: &String, port: u16) -> Result<(), String> {
+pub async fn udp_connect(host: &String, port: u16, cli: &Cli) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
     let socket: UdpSocket = bind_random_port().await?;
@@ -36,6 +39,10 @@ pub async fn udp_connect(host: &String, port: u16) -> Result<(), String> {
         .await
         .map_err(|_| format!("failed to connect to {}", addr))?;
 
+    if !cli.silent {
+        eprintln!("Connected to {} (udp)", addr.green())
+    }
+    
     let mut stdin = stdin();
     let mut stdout = stdout();
 
@@ -86,11 +93,17 @@ pub async fn udp_connect(host: &String, port: u16) -> Result<(), String> {
     Ok(())
 }
 
-pub async fn udp_serve(host: &String, port: u16) -> Result<(), String> {
+pub async fn udp_serve(host: &String, port: u16, cli: &Cli) -> Result<(), String> {
     let addr = format!("{}:{}", host, port);
 
     let socket = UdpSocket::bind(&addr).await
         .map_err(|_| format!("failed to bind to {}", &addr))?;
+
+    // Info message on successful bind
+    if !cli.silent {
+        eprintln!("Listening on {} (udp)", addr.cyan());
+    }
+
 
     let mut stdin = stdin();
     let mut stdout = stdout();
