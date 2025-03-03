@@ -56,7 +56,7 @@ where
 pub fn restore_terminal() {
     match disable_raw_mode() {
         Ok(_) => {},
-        Err(_) => eprintln!("failed to restore terminal"),
+        Err(_) => eprintln!("failed to restore terminal.\nUse the `reset` command to restore your terminal."),
     }
 }
 
