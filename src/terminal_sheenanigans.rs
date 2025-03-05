@@ -13,6 +13,12 @@ pub async fn upgrade_shell<T>(_reader: &mut ReadHalf<T>, writer: &mut WriteHalf<
 where 
     T: AsyncWriteExt + AsyncReadExt
 {
+    // Set Terminal in raw mode
+    match enable_raw_mode() {
+        Ok(_) => {},
+        Err(_) => return Err("Failed to enable raw mode".to_string()),
+    }
+
     // launch /bin/bash with python
     match writer.write_all(b"python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n").await {
         Ok(_)  => {},
@@ -41,12 +47,6 @@ where
     match writer.write_all(b"export TERM=xterm-256color\n").await {
         Ok(_)  => {},
         Err(_) => return Err("Failed to set XTERM variable.".to_string()),
-    }
-    
-    // Set Terminal in raw mode
-    match enable_raw_mode() {
-        Ok(_) => {},
-        Err(_) => return Err("Failed to enable raw mode".to_string()),
     }
 
     Ok(())
