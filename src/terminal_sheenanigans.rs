@@ -1,4 +1,5 @@
 use std::process::exit;
+use colored::Colorize;
 
 use tokio::io::{AsyncWriteExt, AsyncReadExt, ReadHalf, WriteHalf};
 use tokio_util::sync::CancellationToken;
@@ -9,7 +10,35 @@ use tokio::signal::unix::SignalKind;
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
-pub async fn upgrade_shell<T>(_reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
+
+pub async fn upgrade_shell<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
+where 
+    T: AsyncWriteExt + AsyncReadExt
+{
+    // launch /bin/bash with python
+    match writer.write_all(b"uname -s\n").await {
+        Ok(_)  => {},
+        Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+    }
+
+    let mut buf = vec![0; 1024];
+    
+    let size = match reader.read(&mut buf).await {
+        Ok(size) => size,
+        Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+    };
+
+    let uname = String::from_utf8_lossy(&buf[..size]);
+    if uname.contains("Linux") {
+        upgrade_shell_linux(reader, writer).await
+    
+    } else {
+        eprint!("{}", "[*] Only Linux and Mac OS are supported at the moment for the shell upgrade".yellow());
+        Ok(())
+    }
+}
+
+pub async fn upgrade_shell_linux<T>(_reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
 where 
     T: AsyncWriteExt + AsyncReadExt
 {
