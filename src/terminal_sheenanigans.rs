@@ -21,12 +21,20 @@ where
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     }
 
-    let mut buf = vec![0; 1024];
+    let mut buf = vec![0;1024];
     
-    let size = match reader.read(&mut buf).await {
+    let mut size = match reader.read(&mut buf).await {
         Ok(size) => size,
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     };
+
+    // If we just have an anwser like `$ `, read again
+    if size < 4 {
+        size = match reader.read(&mut buf).await {
+            Ok(size) => size,
+            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+        };    
+    }
 
     let uname = String::from_utf8_lossy(&buf[..size]);
     if uname.contains("Linux") {
