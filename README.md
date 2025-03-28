@@ -13,6 +13,13 @@ __Rcat__ is a modern _netcat_ written in Rust, packed with features for hackers.
 
 Here we listen on the port `tcp:9001`, and recieve an HTTP request made with `curl`.
 
+### Install
+
+```bash
+git clone git@github.com:0xfalafel/rcat.git
+cargo install --path .
+```
+
 ### Features
 
 * A syntax similar to netcat:
