@@ -22,14 +22,24 @@ cargo install --path .
 
 ### Features
 
-* A syntax similar to netcat:
-    - `-l` to listen.
-    - `-u` for udp.
+#### Familiar syntax
 
-* Auto __upgrade__ of __Reverse shell__ with `--pwn`.
+Rcat keeps a syntax similar to _netcat_. You already know how to use it.
+
+* `-l` to listen.
+* `-u` for udp.
+
+#### Shell Upgrade
+
+Rcat can upgrade your shells with the `--pwn` option.
+No need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-shells-to-fully-interactive-ttys/) every type you obtain a reverse shell.
+
 <img src="images/rcat_pwn.svg">
 
-* Support of __TLS__ with `-t` or `--tls`.  
-  Here we do an HTTPS request. We use `-t` to establish a _TLS connection_, and `-c` to send _CRLF_ newlines.
+#### TLS support
+
+Support of __TLS__ with `-t` or `--tls`.  
+Here we do an HTTPS request. We use `-t` to establish a _TLS connection_, and `-c` to send _CRLF_ newlines.
+
 <img src="images/rcat_tls.svg">
 
