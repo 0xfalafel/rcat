@@ -45,6 +45,10 @@ struct Cli {
     #[arg(long)]
     pwn: bool,
 
+    /// Set the terminal to raw mode when we recieve a connection.
+    #[arg(long)]
+    raw: bool,
+
     /// Certificate autority to use to valide the remote host when connecting with TLS.
     #[arg(long)]
     cafile: Option<PathBuf>,
@@ -118,7 +122,11 @@ where
 
 
 fn main() {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
+
+    if cli.pwn { // Set the terminal to raw mode if we have --pwn
+        cli.raw = true;
+    }
 
     let (host, port) = match get_host_port(&cli) {
         Err(err_msg) => {
@@ -161,7 +169,7 @@ fn main() {
         }
     }
 
-    if cli.pwn {
+    if cli.raw {
         restore_terminal();
     }
 }

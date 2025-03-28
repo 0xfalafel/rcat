@@ -1,3 +1,4 @@
+use crossterm::terminal::enable_raw_mode;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
 use std::marker::Send;
 use colored::Colorize;
@@ -15,6 +16,12 @@ where
         match upgrade_shell(&mut reader, &mut writer).await {
             Ok(()) => {},
             Err(error_msg) => eprintln!("{}", error_msg.red())
+        }
+    // If we don't have --pwn, but still have --raw option activated
+    } else if cli.raw {
+        match enable_raw_mode() {
+            Ok(_) => {},
+            Err(_) => return Err("Failed to enable raw mode".to_string()),
         }
     }
 
