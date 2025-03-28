@@ -10,7 +10,8 @@
 __Rcat__ is a modern _netcat_ written in Rust, packed with features for hackers.
 
 <img src="images/rcat_curl.svg">
-> Here we listen on the port `tcp:9001`. And recieve a connection made with `curl`.
+
+Here we listen on the port `tcp:9001`, and recieve an HTTP request made with `curl`.
 
 ### Features
 
