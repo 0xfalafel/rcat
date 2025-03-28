@@ -31,7 +31,7 @@ Rcat keeps a syntax similar to _netcat_. You already know how to use it.
 
 #### Shell Upgrade
 
-Rcat can upgrade your shells with the `--pwn` option.
+Rcat can __upgrade your shells__ with the `--pwn` option.  
 No need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-shells-to-fully-interactive-ttys/) every type you obtain a reverse shell.
 
 <img src="images/rcat_pwn.svg">
