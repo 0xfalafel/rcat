@@ -128,6 +128,11 @@ fn main() {
         cli.raw = true;
     }
 
+    // If we have a TLS parameter, do a TLS connection
+    if cli.cert.is_some() || cli.key.is_some() || cli.cafile.is_some() {
+        cli.tls = true;
+    }
+
     let (host, port) = match get_host_port(&cli) {
         Err(err_msg) => {
             eprintln!("{}", err_msg); exit(1)
