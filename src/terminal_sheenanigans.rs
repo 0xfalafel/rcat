@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{process::exit, time::Duration};
 use colored::Colorize;
 
 use tokio::io::{AsyncWriteExt, AsyncReadExt, ReadHalf, WriteHalf};
@@ -6,6 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 #[cfg(unix)]
 use tokio::signal::unix::SignalKind;
+use tokio::time::timeout;
 
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
@@ -15,13 +16,27 @@ pub async fn upgrade_shell<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T
 where 
     T: AsyncWriteExt + AsyncReadExt
 {
+    
+    let mut buf = vec![0;1024];
+    
+    // Read and ignore the inital input that can be generated
+    // by the reverse shell
+    let time_limit = Duration::from_millis(500);
+    let _res = timeout(time_limit, async {
+        loop {
+            let _ = match reader.read(&mut buf).await {
+                Ok(size) => size,
+                Err(_) => 0 //return Err("Initial read failed.".to_string()),
+            };
+        }
+    }).await;
+
     // launch /bin/bash with python
     match writer.write_all(b"uname -s\n").await {
         Ok(_)  => {},
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     }
 
-    let mut buf = vec![0;1024];
     
     let mut size = match reader.read(&mut buf).await {
         Ok(size) => size,
