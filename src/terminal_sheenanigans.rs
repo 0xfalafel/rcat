@@ -6,7 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 #[cfg(unix)]
 use tokio::signal::unix::SignalKind;
-use tokio::time::timeout;
+use tokio::time::{sleep, timeout};
 
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
@@ -54,12 +54,34 @@ where
     let uname = String::from_utf8_lossy(&buf[..size]);
     if uname.contains("Linux") {
         upgrade_shell_linux(reader, writer).await
-    
+        
     } else {
         eprint!("{}", "[*] Only Linux and Mac OS are supported at the moment for the shell upgrade".yellow());
         Ok(())
     }
 }
+
+/// Detect if the size of the terminal windows has changed
+/// and resize the remote terminal if this happens
+pub async fn autoresize_terminal() -> Result<(), String> {
+
+    let (mut intial_width, mut initial_height) = match terminal_size() {
+        Some((width, height)) => (width, height),
+        None => return Err("Failed to obtain terminal size".to_string())
+    };
+
+    loop {
+        sleep(Duration::from_secs(1)).await;
+
+        if let Some((width, height)) = terminal_size() {
+            if width != intial_width || height != initial_height {
+                eprintln!("{}", "Terminal size has changed".to_string().red());
+                intial_width = width;
+                initial_height = height;
+            }
+        }
+    }
+} 
 
 pub async fn upgrade_shell_linux<T>(_reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
 where 
@@ -100,6 +122,8 @@ where
         Ok(_)  => {},
         Err(_) => return Err("Failed to set XTERM variable.".to_string()),
     }
+
+    tokio::spawn(autoresize_terminal());
 
     Ok(())
 }
