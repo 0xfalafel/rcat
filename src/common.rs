@@ -1,9 +1,10 @@
 use crossterm::terminal::enable_raw_mode;
-use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
-use std::marker::Send;
+use futures::lock::Mutex;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
+use std::{marker::Send, sync::Arc};
 use colored::Colorize;
 
-use crate::{newline::NewlineReplacer, terminal_sheenanigans::upgrade_shell, Cli};
+use crate::{newline::NewlineReplacer, terminal_sheenanigans::{autoresize_terminal, upgrade_shell}, Cli};
 
 /// Copy from stdin to network, and from network to stdout.
 /// It will also run upgrade_shell() if specified
@@ -35,20 +36,51 @@ where
     // If cli.crlf flag is present: we copy from the NewlineReplacer.
 
     let mut replacer = NewlineReplacer::new(tokio::io::stdin());
+    let writer = Arc::new(Mutex::new(writer));
 
     let copy_from_stdin = match cli.crlf {
-        false => tokio::io::copy(&mut tokio::io::stdin(), &mut writer).await,
-        true =>  tokio::io::copy(&mut replacer, &mut writer).await,
+        false => copy(&mut tokio::io::stdin(), writer.clone()).await,
+        true =>  copy(&mut replacer, writer.clone()).await,
     };
 
     let client_write = tokio::spawn(async move {
         copy_from_stdin
     });
 
+    if cli.raw {
+        tokio::spawn(autoresize_terminal(writer));
+    }
+
     tokio::select! {
         _ = client_read  => {},
         _ = client_write => {}
     }    
+
+    Ok(())
+}
+
+pub async fn copy<R, T>(mut reader: R, writer: Arc<Mutex<WriteHalf<T>>>) -> Result<(), String> 
+where
+    R: AsyncRead + Unpin,
+    T: AsyncWriteExt,
+{
+
+    let mut buffer = [0; 1024];
+
+    loop {
+        // Read data from the reader
+        let n = match reader.read(&mut buffer).await {
+            Ok(0) => break, // End of stream
+            Ok(n) => n,
+            Err(e) => return Err(format!("Failed to read from socket: {}", e)),
+        };
+
+        // Write data to the writer
+        let mut writer = writer.lock().await;
+        if let Err(e) = writer.write_all(&buffer[..n]).await {
+            return Err(format!("Failed to write to socket: {}", e));
+        }
+    }
 
     Ok(())
 }
