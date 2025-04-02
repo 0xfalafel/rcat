@@ -37,6 +37,14 @@ No need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-shells-to-
 
 <img src="images/rcat_pwn.svg">
 
+##### Resize
+
+Unless you use the `-R` option, the remote terminal will automaticaly be resized when you change the size of your terminal.  
+
+<img src="images/rcat_resize.svg">
+
+(Rcat sends a _SIGTSTP_, size the terminal with the `stty` command, and use `fg` to restore the application running.)
+
 #### TLS support
 
 Support of __TLS__ with `-t` or `--tls`.  
