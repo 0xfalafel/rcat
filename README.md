@@ -42,7 +42,7 @@ There is no need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-s
 #### Resize
 
 Unless you use the `-R` option, the remote terminal will automatically be resized when you change the size of your terminal.  
-(Rcat sends a _SIGTSTP_, resizes the terminal with the `stty` command then uses `fg` to restore the application running.)
+> (Rcat sends a _SIGTSTP_, resizes the terminal with the `stty` command then uses `fg` to restore the application running.)
 
 <img src="images/rcat_resize.webp">
 
