@@ -45,6 +45,9 @@ struct Cli {
     #[arg(long)]
     pwn: bool,
 
+    #[arg(short='R')]
+    no_autoresize: bool,
+
     /// Set the terminal to raw mode when we recieve a connection.
     #[arg(long)]
     raw: bool,

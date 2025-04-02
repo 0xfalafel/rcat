@@ -41,7 +41,7 @@ where
         copy_from_stdin(socker_writer, crlf).await
     });
 
-    if cli.pwn {
+    if cli.pwn && !cli.no_autoresize {
         tokio::spawn(autoresize_terminal(arc_writer.clone()));
     }
 
