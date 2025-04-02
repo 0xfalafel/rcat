@@ -37,6 +37,8 @@ There is no need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-s
 
 <img src="images/rcat_pwn.svg">
 
+> Here the commands `stty rows 22 cols 86` and `export TERM=xterm-256colors` are typed automatically when the connection is received.
+
 #### Resize
 
 Unless you use the `-R` option, the remote terminal will automatically be resized when you change the size of your terminal.  
