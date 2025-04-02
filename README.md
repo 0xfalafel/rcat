@@ -44,6 +44,7 @@ Unless you use the `-R` option, the remote terminal will automaticaly be resized
 
 <img src="images/rcat_resize.webp">
 
+> In this clip with run `htop` on the victim machine. And the reverse shell is automaticaly resized.
 
 #### TLS support
 
