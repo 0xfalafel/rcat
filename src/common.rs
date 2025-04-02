@@ -72,12 +72,10 @@ where
             Err(e) => return Err(format!("Failed to read from socket: {}", e)),
         };
 
-        {
-            // Write data to the writer
-            let mut writer = writer_mutex.lock().await;
-            if let Err(e) = writer.write_all(&buffer[..n]).await {
-                return Err(format!("Failed to write to socket: {}", e));
-            }
+        // Write data to the writer
+        let mut writer = writer_mutex.lock().await;
+        if let Err(e) = writer.write_all(&buffer[..n]).await {
+            return Err(format!("Failed to write to socket: {}", e));
         }
     }
 
