@@ -1,6 +1,7 @@
 use crossterm::terminal::enable_raw_mode;
-use futures::lock::Mutex;
+use tokio::sync::Mutex;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
+use std::pin::Pin;
 use std::{marker::Send, sync::Arc};
 use colored::Colorize;
 
@@ -31,24 +32,17 @@ where
         tokio::io::copy(&mut reader, &mut tokio::io::stdout()).await
     });
     
-    
-    // We copy from stdin to the network socket.        
-    // If cli.crlf flag is present: we copy from the NewlineReplacer.
+    let arc_writer = Arc::new(Mutex::new(writer));
 
-    let mut replacer = NewlineReplacer::new(tokio::io::stdin());
-    let writer = Arc::new(Mutex::new(writer));
-
-    let copy_from_stdin = match cli.crlf {
-        false => copy(&mut tokio::io::stdin(), writer.clone()).await,
-        true =>  copy(&mut replacer, writer.clone()).await,
-    };
+    let crlf: bool = cli.crlf;
+    let socker_writer = arc_writer.clone();
 
     let client_write = tokio::spawn(async move {
-        copy_from_stdin
+        copy_from_stdin(socker_writer, crlf).await
     });
 
     if cli.pwn {
-        tokio::spawn(autoresize_terminal(writer));
+        tokio::spawn(autoresize_terminal(arc_writer.clone()));
     }
 
     tokio::select! {
@@ -59,17 +53,20 @@ where
     Ok(())
 }
 
-pub async fn copy<R, T>(mut reader: R, writer_mutex: Arc<Mutex<WriteHalf<T>>>) -> Result<(), String> 
+pub async fn copy_from_stdin<T>(writer_mutex: Arc<Mutex<WriteHalf<T>>>, crlf: bool) -> Result<(), String> 
 where
-    R: AsyncRead + Unpin,
-    T: AsyncWriteExt,
+    T: AsyncWriteExt + 'static,
 {
+    let mut stdin: Pin<Box<dyn AsyncRead + Send>> = match crlf {
+        true => Box::pin(NewlineReplacer::new(tokio::io::stdin())),
+        false => Box::pin(tokio::io::stdin()),
+    };
 
     let mut buffer = [0; 1024];
 
     loop {
         // Read data from the reader
-        let n = match reader.read(&mut buffer).await {
+        let n = match stdin.read(&mut buffer).await {
             Ok(0) => break, // End of stream
             Ok(n) => n,
             Err(e) => return Err(format!("Failed to read from socket: {}", e)),

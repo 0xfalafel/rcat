@@ -1,6 +1,6 @@
 use std::{process::exit, time::Duration};
 use colored::Colorize;
-use futures::lock::Mutex;
+use tokio::sync::Mutex;
 use std::sync::Arc;
 
 use tokio::io::{AsyncWriteExt, AsyncReadExt, ReadHalf, WriteHalf};
@@ -66,7 +66,7 @@ where
 /// Detect if the size of the terminal windows has changed
 /// and resize the remote terminal if this happens
 pub async fn autoresize_terminal<T>(writer: Arc<Mutex<WriteHalf<T>>>) -> Result<(), String>
-where T: AsyncWriteExt,
+where T: AsyncWriteExt + Send + 'static,
 {
     let (mut intial_width, mut initial_height) = match terminal_size() {
         Some((Width(width), Height(height))) => (width, height),
@@ -78,11 +78,12 @@ where T: AsyncWriteExt,
 
         if let Some((Width(width), Height(height))) = terminal_size() {
             if width != intial_width || height != initial_height {
-                eprintln!("{}", "Terminal size has changed".to_string().red());
+                // eprintln!("{}", "Terminal size has changed".to_string().red());
 
                 {
-                    let mut writer = writer.lock().await;
                     let stty_command = format!("stty rows {} cols {}\n", height, width);
+
+                    let mut writer = writer.lock().await;
                     
                     if let Err(e) = writer.write_all(stty_command.as_bytes()).await {
                         return Err(format!("Failed to write to socket: {}", e));
