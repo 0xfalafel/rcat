@@ -55,7 +55,7 @@ where
 
 pub async fn copy_from_stdin<T>(writer_mutex: Arc<Mutex<WriteHalf<T>>>, crlf: bool) -> Result<(), String> 
 where
-    T: AsyncWriteExt + 'static,
+    T: AsyncWriteExt
 {
     let mut stdin: Pin<Box<dyn AsyncRead + Send>> = match crlf {
         true => Box::pin(NewlineReplacer::new(tokio::io::stdin())),
