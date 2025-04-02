@@ -74,17 +74,23 @@ where T: AsyncWriteExt + Send + 'static,
     };
 
     loop {
-        sleep(Duration::from_secs(1)).await;
+        sleep(Duration::from_millis(400)).await;
 
         if let Some((Width(width), Height(height))) = terminal_size() {
             if width != intial_width || height != initial_height {
-                // eprintln!("{}", "Terminal size has changed".to_string().red());
-
                 {
-                    let stty_command = format!("stty rows {} cols {}\n", height, width);
-
                     let mut writer = writer.lock().await;
                     
+                    // Send Ctrl-Z signal to the remote terminal
+                    if let Err(e) = writer.write_all(&[0x1a]).await {
+                        return Err(format!("Failed to write to socket: {}", e));
+                    }
+
+                    // This is 100 ms delay is needed for some apps like `vim` that take time to react to the Ctrl-Z signal
+                    sleep(Duration::from_millis(100)).await;
+
+                    // set the remote terminal size with stty
+                    let stty_command = format!("stty rows {} cols {}; fg 2>/dev/null\n", height, width);
                     if let Err(e) = writer.write_all(stty_command.as_bytes()).await {
                         return Err(format!("Failed to write to socket: {}", e));
                     }
