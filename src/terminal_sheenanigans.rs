@@ -80,13 +80,15 @@ where T: AsyncWriteExt,
             if width != intial_width || height != initial_height {
                 eprintln!("{}", "Terminal size has changed".to_string().red());
 
-                let mut writer = writer.lock().await;
-                let stty_command = format!("stty rows {} cols {}\n", height, width);
-        
-                if let Err(e) = writer.write_all(stty_command.as_bytes()).await {
-                    return Err(format!("Failed to write to socket: {}", e));
+                {
+                    let mut writer = writer.lock().await;
+                    let stty_command = format!("stty rows {} cols {}\n", height, width);
+                    
+                    if let Err(e) = writer.write_all(stty_command.as_bytes()).await {
+                        return Err(format!("Failed to write to socket: {}", e));
+                    }
                 }
-
+                    
                 intial_width = width;
                 initial_height = height;
             }

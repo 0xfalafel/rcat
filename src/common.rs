@@ -47,7 +47,7 @@ where
         copy_from_stdin
     });
 
-    if cli.raw {
+    if cli.pwn {
         tokio::spawn(autoresize_terminal(writer));
     }
 
@@ -59,7 +59,7 @@ where
     Ok(())
 }
 
-pub async fn copy<R, T>(mut reader: R, writer: Arc<Mutex<WriteHalf<T>>>) -> Result<(), String> 
+pub async fn copy<R, T>(mut reader: R, writer_mutex: Arc<Mutex<WriteHalf<T>>>) -> Result<(), String> 
 where
     R: AsyncRead + Unpin,
     T: AsyncWriteExt,
@@ -75,10 +75,12 @@ where
             Err(e) => return Err(format!("Failed to read from socket: {}", e)),
         };
 
-        // Write data to the writer
-        let mut writer = writer.lock().await;
-        if let Err(e) = writer.write_all(&buffer[..n]).await {
-            return Err(format!("Failed to write to socket: {}", e));
+        {
+            // Write data to the writer
+            let mut writer = writer_mutex.lock().await;
+            if let Err(e) = writer.write_all(&buffer[..n]).await {
+                return Err(format!("Failed to write to socket: {}", e));
+            }
         }
     }
 
