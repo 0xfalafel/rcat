@@ -47,3 +47,17 @@ jobs:
 
     - name: Build
       run: cargo build --target ${{ matrix.target }}
+
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build
+      run: cargo build --verbose
