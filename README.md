@@ -14,6 +14,15 @@ __Rcat__ is a modern _netcat_ written in Rust, packed with features for hackers.
 Here we listen on port `tcp:9001`, and receive an HTTP request made with `curl`.
 
 ### Install
+#### Static binaries
+
+We provide binaries for:
+* [Linux amd64](https://github.com/0xfalafel/rcat/releases/latest/download/rcat_amd64)
+* [Linux arm64](https://github.com/0xfalafel/rcat/releases/latest/download/rcat_arm64)
+* [Windows](https://github.com/0xfalafel/rcat/releases/latest/download/rcat.exe) (amd64)
+* [Mac OS](https://github.com/0xfalafel/rcat/releases/latest/download/rcat_macos) (arm64)
+
+#### Build from source
 
 ```bash
 git clone git@github.com:0xfalafel/rcat.git
