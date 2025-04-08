@@ -12,6 +12,7 @@ mod tls;
 mod terminal_sheenanigans;
 mod common;
 mod newline;
+mod upgrade_windows_shell;
 
 #[derive(Parser,Default,Debug)]
 //#[command(author, version, about, long_about = None)]
