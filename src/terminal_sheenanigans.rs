@@ -13,13 +13,14 @@ use tokio::time::{sleep, timeout};
 use terminal_size::{Width, Height, terminal_size};
 use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
+use crate::upgrade_windows_shell::WINDOWS_UPGRADE;
 
 pub async fn upgrade_shell<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
 where 
     T: AsyncWriteExt + AsyncReadExt
 {
     
-    let mut buf = vec![0;1024];
+    let mut buf = vec![0;4096];
     
     // Read and ignore the inital input that can be generated
     // by the reverse shell
@@ -58,8 +59,33 @@ where
         upgrade_shell_linux(reader, writer).await
         
     } else {
-        eprint!("{}", "[*] Only Linux and Mac OS are supported at the moment for the shell upgrade".yellow());
-        Ok(())
+        // We don't have a Unix system, let's test if it's a Windows
+        match writer.write_all(b"systeminfo /?\n").await {
+            Ok(_)  => {},
+            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+        }
+    
+        let mut size = match reader.read(&mut buf).await {
+            Ok(size) => size,
+            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+        };
+    
+        // If we just have an anwser like `$ `, read again
+        if size < 4 {
+            size = match reader.read(&mut buf).await {
+                Ok(size) => size,
+                Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+            };    
+        }
+    
+        let uname = String::from_utf8_lossy(&buf[..size]);
+        if uname.contains("SYSTEMINFO") {
+            upgrade_shell_windows(reader, writer).await
+
+        } else {
+            eprint!("{}", "[*] Only Linux and Windows are supported at the moment for the shell upgrade".yellow());
+            Ok(())    
+        }
     }
 }
 
@@ -144,6 +170,58 @@ where
     Ok(())
 }
 
+pub async fn upgrade_shell_windows<T>(_reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
+where 
+    T: AsyncWriteExt + AsyncReadExt
+{
+    // Copy the Windows shell upgrade script
+    for line in WINDOWS_UPGRADE.lines() {
+        match writer.write_all(format!("{}\n", line).as_bytes()).await {
+            Ok(_)  => {println!("{}", line)},
+            Err(_) => return Err("Failed to copy Windows shell upgrade script.".to_string()),
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+    }
+
+    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+
+    // Obtain terminal size
+    let (w, h) = match terminal_size() {
+        Some((Width(w), Height(h))) => (w, h),
+        None => (80, 20)
+    };
+
+    // Define remote terminal size with $Columns and $Rows
+    let stty_command = format!("$Columns = {}\n$Rows = {}\n", w, h);
+    
+    match writer.write_all(stty_command.as_bytes()).await {
+        Ok(_)  => {},
+        Err(_) => return Err("Failed to write $Columns and $Rows variables.".to_string()),
+    }
+    
+    let upgrade_shell_command = concat!(
+        "$param = @($Rows, $Columns)\n",
+        "Add-Type -TypeDefinition ($source + $source2)\n",
+        "$output = [UpgradeMainClass]::UpgradeMain($param)\n"
+    );
+
+    match writer.write_all(upgrade_shell_command.as_bytes()).await {
+        Ok(_)  => {},
+        Err(_) => return Err("Failed to write Add-Type command.".to_string()),
+    }
+
+
+    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+
+    // Set Terminal in raw mode
+    match enable_raw_mode() {
+        Ok(_) => {},
+        Err(_) => return Err("Failed to enable raw mode".to_string()),
+    }
+
+    Ok(())
+}
+
 pub fn restore_terminal() {
     match disable_raw_mode() {
         Ok(_) => {},
@@ -170,6 +248,8 @@ pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String
 
     exit(0);
 }
+
+
 
 #[cfg(windows)]
 pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String> {
