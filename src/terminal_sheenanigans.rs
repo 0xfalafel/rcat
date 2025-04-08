@@ -177,7 +177,7 @@ where
     // Copy the Windows shell upgrade script
     for line in WINDOWS_UPGRADE.lines() {
         match writer.write_all(format!("{}\n", line).as_bytes()).await {
-            Ok(_)  => {println!("{}", line)},
+            Ok(_)  => {},
             Err(_) => return Err("Failed to copy Windows shell upgrade script.".to_string()),
         }
         tokio::time::sleep(std::time::Duration::from_millis(1)).await;
