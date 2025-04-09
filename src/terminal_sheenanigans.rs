@@ -15,11 +15,16 @@ use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 use crate::upgrade_windows_shell::WINDOWS_UPGRADE;
 
+pub enum OS {
+    Unix,
+    Windows,
+    Unknown
+}
+
 pub async fn upgrade_shell<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
 where 
     T: AsyncWriteExt + AsyncReadExt
 {
-    
     let mut buf = vec![0;4096];
     
     // Read and ignore the inital input that can be generated
@@ -34,13 +39,29 @@ where
         }
     }).await;
 
-    // launch /bin/bash with python
+    let os = detect_os(reader, writer).await?;
+    
+    match os {
+        OS::Unix => upgrade_shell_linux(reader, writer).await?,
+        OS::Windows => upgrade_shell_windows(reader, writer).await?,
+        _ => eprint!("{}", "[*] Only Linux and Windows are supported at the moment for the shell upgrade".yellow())
+    }
+
+    Ok(())
+}
+
+pub async fn detect_os<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<OS, String> 
+where
+    T: AsyncWriteExt + AsyncReadExt
+{
+    let mut buf = vec![0;4096];
+
+    // Test if we have a Unix system
     match writer.write_all(b"uname -s\n").await {
         Ok(_)  => {},
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     }
 
-    
     let mut size = match reader.read(&mut buf).await {
         Ok(size) => size,
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
@@ -51,43 +72,42 @@ where
         size = match reader.read(&mut buf).await {
             Ok(size) => size,
             Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-        };    
+        };
     }
 
     let uname = String::from_utf8_lossy(&buf[..size]);
     if uname.contains("Linux") {
-        upgrade_shell_linux(reader, writer).await
-        
-    } else {
-        // We don't have a Unix system, let's test if it's a Windows
-        match writer.write_all(b"systeminfo /?\n").await {
-            Ok(_)  => {},
-            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-        }
+        return Ok(OS::Unix)
+    }
     
-        let mut size = match reader.read(&mut buf).await {
+    
+    // Let's test if it's a Windows
+    match writer.write_all(b"systeminfo /?\n").await {
+        Ok(_)  => {},
+        Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+    }
+
+    let mut size = match reader.read(&mut buf).await {
+        Ok(size) => size,
+        Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+    };
+
+    // If we just have an anwser like `$ `, read again
+    if size < 4 {
+        size = match reader.read(&mut buf).await {
             Ok(size) => size,
             Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
         };
-    
-        // If we just have an anwser like `$ `, read again
-        if size < 4 {
-            size = match reader.read(&mut buf).await {
-                Ok(size) => size,
-                Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-            };    
-        }
-    
-        let uname = String::from_utf8_lossy(&buf[..size]);
-        if uname.contains("SYSTEMINFO") {
-            upgrade_shell_windows(reader, writer).await
-
-        } else {
-            eprint!("{}", "[*] Only Linux and Windows are supported at the moment for the shell upgrade".yellow());
-            Ok(())    
-        }
     }
+
+    let uname = String::from_utf8_lossy(&buf[..size]);
+    if uname.contains("SYSTEMINFO") {
+        return Ok(OS::Windows)
+    }
+
+    Ok(OS::Unknown)
 }
+
 
 /// Detect if the size of the terminal windows has changed
 /// and resize the remote terminal if this happens
