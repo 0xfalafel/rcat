@@ -5,7 +5,8 @@ use std::pin::Pin;
 use std::{marker::Send, sync::Arc};
 use colored::Colorize;
 
-use crate::{newline::NewlineReplacer, terminal_sheenanigans::{autoresize_terminal, upgrade_shell}, Cli};
+use crate::{newline::NewlineReplacer, Cli};
+use crate::terminal_sheenanigans::{autoresize_terminal, upgrade_shell, OS};
 
 /// Copy from stdin to network, and from network to stdout.
 /// It will also run upgrade_shell() if specified
@@ -13,12 +14,17 @@ pub async fn read_write<T>(mut reader: ReadHalf<T>, mut writer: WriteHalf<T>, cl
 where 
     T: AsyncWriteExt + AsyncReadExt + Send + 'static
 {
+    let mut os: OS = OS::Unknown; 
+
     // Upgrade Reverse shell
     if cli.pwn {
-        match upgrade_shell(&mut reader, &mut writer).await {
-            Ok(()) => {},
-            Err(error_msg) => eprintln!("{}", error_msg.red())
-        }
+        os = match upgrade_shell(&mut reader, &mut writer).await {
+            Ok(os) => os,
+            Err(error_msg) => {
+                eprintln!("{}", error_msg.red());
+                OS::Unknown
+            }
+        };
     // If we don't have --pwn, but still have --raw option activated
     } else if cli.raw {
         match enable_raw_mode() {
@@ -42,7 +48,7 @@ where
     });
 
     if cli.pwn && !cli.no_autoresize {
-        tokio::spawn(autoresize_terminal(arc_writer.clone()));
+        tokio::spawn(autoresize_terminal(arc_writer.clone(), os));
     }
 
     tokio::select! {

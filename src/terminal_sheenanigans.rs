@@ -15,13 +15,14 @@ use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 use crate::upgrade_windows_shell::WINDOWS_UPGRADE;
 
+#[derive(Debug, PartialEq)]
 pub enum OS {
     Unix,
     Windows,
     Unknown
 }
 
-pub async fn upgrade_shell<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<(), String> 
+pub async fn upgrade_shell<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<OS, String> 
 where 
     T: AsyncWriteExt + AsyncReadExt
 {
@@ -47,7 +48,7 @@ where
         _ => eprint!("{}", "[*] Only Linux and Windows are supported at the moment for the shell upgrade".yellow())
     }
 
-    Ok(())
+    Ok(os)
 }
 
 pub async fn detect_os<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<OS, String> 
@@ -111,7 +112,7 @@ where
 
 /// Detect if the size of the terminal windows has changed
 /// and resize the remote terminal if this happens
-pub async fn autoresize_terminal<T>(writer: Arc<Mutex<WriteHalf<T>>>) -> Result<(), String>
+pub async fn autoresize_terminal<T>(writer: Arc<Mutex<WriteHalf<T>>>, os: OS) -> Result<(), String>
 where T: AsyncWriteExt + Send + 'static,
 {
     let (mut intial_width, mut initial_height) = match terminal_size() {
@@ -125,19 +126,38 @@ where T: AsyncWriteExt + Send + 'static,
         if let Some((Width(width), Height(height))) = terminal_size() {
             if width != intial_width || height != initial_height {
                 let mut writer = writer.lock().await;
-                
-                // Send Ctrl-Z signal to the remote terminal
-                if let Err(e) = writer.write_all(&[0x1a]).await {
-                    return Err(format!("Failed to write to socket: {}", e));
-                }
 
-                // This is 100 ms delay is needed for some apps like `vim` that take time to react to the Ctrl-Z signal
-                sleep(Duration::from_millis(100)).await;
+                if os == OS::Unix {
 
-                // set the remote terminal size with stty
-                let stty_command = format!("stty rows {} cols {}; fg 2>/dev/null\n", height, width);
-                if let Err(e) = writer.write_all(stty_command.as_bytes()).await {
-                    return Err(format!("Failed to write to socket: {}", e));
+                    // Send Ctrl-Z signal to the remote terminal
+                    if let Err(e) = writer.write_all(&[0x1a]).await {
+                        return Err(format!("Failed to write to socket: {}", e));
+                    }
+                    
+                    // This is 100 ms delay is needed for some apps like `vim` that take time to react to the Ctrl-Z signal
+                    sleep(Duration::from_millis(100)).await;
+                    
+                    // set the remote terminal size with stty
+                    let stty_command = format!("stty rows {} cols {}; fg 2>/dev/null\n", height, width);
+                    if let Err(e) = writer.write_all(stty_command.as_bytes()).await {
+                        return Err(format!("Failed to write to socket: {}", e));
+                    }
+                } else if os == OS::Windows {
+                    let resize_command1 = format!(
+                        "$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size ({}, {});\r\n", width, height
+                    );
+
+                    if let Err(e) = writer.write_all(resize_command1.as_bytes()).await {
+                        return Err(format!("Failed to write to socket: {}", e));
+                    }
+
+                    sleep(Duration::from_millis(100)).await;
+
+                    let resize_command2 = format!("$Host.UI.RawUI.WindowSize = New-Object -TypeName System.Management.Automation.Host.Size -ArgumentList ({}, {})\r\n", width, height);
+
+                    if let Err(e) = writer.write_all(resize_command2.as_bytes()).await {
+                        return Err(format!("Failed to write to socket: {}", e));
+                    }
                 }
                     
                 intial_width = width;
