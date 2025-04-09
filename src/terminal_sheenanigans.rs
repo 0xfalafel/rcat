@@ -65,25 +65,28 @@ where
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     }
 
-    let mut size = match reader.read(&mut buf).await {
-        Ok(size) => size,
-        Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-    };
+    // Let's make a few reads, and try do detect Darwin or Linux
+    let time_limit = Duration::from_millis(500);
+    let detect_linux = timeout(time_limit, async {
+        loop {
+            let _size = match reader.read(&mut buf).await {
+                Ok(size) => size,
+                Err(_) => 0 //return Err("Initial read failed.".to_string()),
+            };
 
-    // If we just have an anwser like `$ `, read again
-    if size < 4 {
-        size = match reader.read(&mut buf).await {
-            Ok(size) => size,
-            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-        };
-    }
+            let uname = String::from_utf8_lossy(&buf[.._size]);
+            println!("uname: {}", uname);
+            if uname.contains("Linux") || uname.contains("Darwin") {
+                return true
+            }
+        }
 
-    let uname = String::from_utf8_lossy(&buf[..size]);
-    println!("uname: {}", uname);
-    if uname.contains("Linux") || uname.contains("Darwin") {
+    }).await;
+    
+    if let Ok(true) = detect_linux {
         return Ok(OS::Unix)
     }
-    
+
     // Let's test if it's a Windows
     match writer.write_all(b"systeminfo /?\n").await {
         Ok(_)  => {},
