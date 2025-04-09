@@ -32,10 +32,13 @@ where
     let time_limit = Duration::from_millis(500);
     let _res = timeout(time_limit, async {
         loop {
-            let _ = match reader.read(&mut buf).await {
+            let _size = match reader.read(&mut buf).await {
                 Ok(size) => size,
                 Err(_) => 0 //return Err("Initial read failed.".to_string()),
             };
+
+            let text = String::from_utf8_lossy(&buf[.._size]);
+            println!("{}", text);
         }
     }).await;
 
@@ -76,10 +79,10 @@ where
     }
 
     let uname = String::from_utf8_lossy(&buf[..size]);
-    if uname.contains("Linux") {
+    println!("uname: {}", uname);
+    if uname.contains("Linux") || uname.contains("Darwin") {
         return Ok(OS::Unix)
     }
-    
     
     // Let's test if it's a Windows
     match writer.write_all(b"systeminfo /?\n").await {
