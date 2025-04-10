@@ -143,23 +143,17 @@ where T: AsyncWriteExt + Send + 'static,
                         return Err(format!("Failed to write to socket: {}", e));
                     }
                 } else if os == OS::Windows {
-                    let resize_command1 = format!(
-                        "$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size ({}, {});\r\n", width, height
+                    let resize_terminal = format!("\
+                        $Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (1000, 9999);\
+                        $Host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size ({}, {});",
+                        width, height
                     );
 
-                    if let Err(e) = writer.write_all(resize_command1.as_bytes()).await {
-                        return Err(format!("Failed to write to socket: {}", e));
-                    }
-
-                    sleep(Duration::from_millis(100)).await;
-
-                    let resize_command2 = format!("$Host.UI.RawUI.WindowSize = New-Object -TypeName System.Management.Automation.Host.Size -ArgumentList ({}, {})\r\n", width, height);
-
-                    if let Err(e) = writer.write_all(resize_command2.as_bytes()).await {
+                    if let Err(e) = writer.write_all(resize_terminal.as_bytes()).await {
                         return Err(format!("Failed to write to socket: {}", e));
                     }
                 }
-                    
+                
                 intial_width = width;
                 initial_height = height;
             }
