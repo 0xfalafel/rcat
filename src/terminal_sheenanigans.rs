@@ -229,7 +229,7 @@ where
 
     let upgrade_shell_command = format!(
         "$output = [UpgradeMainClass]::UpgradeMain(@({}, {}))\n",
-        w, h
+        h, w
     );
 
     match writer.write_all(upgrade_shell_command.as_bytes()).await {
