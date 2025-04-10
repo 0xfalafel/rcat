@@ -48,6 +48,12 @@ There is no need to [type 7 commands](https://blog.ropnop.com/upgrading-simple-s
 
 > Here the commands `stty rows 22 cols 65` and `export TERM=xterm-256colors` are typed automatically when the connection is received.
 
+#### Shell Upgrade Windows
+
+Windows is also supported by the shell upgrade feature.
+
+<img src="images/rcat_win.svg">
+
 #### Resize
 
 Unless you use the `-R` option, the remote terminal will automatically be resized when you change the size of your terminal.  
