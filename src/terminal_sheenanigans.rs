@@ -208,7 +208,7 @@ pub async fn upgrade_shell_windows<T>(_reader: &mut ReadHalf<T>, writer: &mut Wr
 where 
     T: AsyncWriteExt + AsyncReadExt
 {
-    eprintln!("Detected {}, {} the {}.", "Windows".blue(), "upgrading".yellow(), "shell".yellow());
+    eprintln!("Detected {}. {} the {}.", "Windows".blue(), "Upgrading".yellow(), "shell".yellow());
 
     // Copy the Windows shell upgrade script
     for line in WINDOWS_UPGRADE.lines() {
