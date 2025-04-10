@@ -227,27 +227,15 @@ where
         None => (80, 20)
     };
 
-    // Define remote terminal size with $Columns and $Rows
-    let stty_command = format!("$Columns = {}\n$Rows = {}\n", w, h);
-    
-    match writer.write_all(stty_command.as_bytes()).await {
-        Ok(_)  => {},
-        Err(_) => return Err("Failed to write $Columns and $Rows variables.".to_string()),
-    }
-    
-    let upgrade_shell_command = concat!(
-        "$param = @($Rows, $Columns)\n",
-        "Add-Type -TypeDefinition ($source + $source2)\n",
-        "$output = [UpgradeMainClass]::UpgradeMain($param)\n"
+    let upgrade_shell_command = format!(
+        "$output = [UpgradeMainClass]::UpgradeMain(@({}, {}))\n",
+        w, h
     );
 
     match writer.write_all(upgrade_shell_command.as_bytes()).await {
         Ok(_)  => {},
-        Err(_) => return Err("Failed to write Add-Type command.".to_string()),
+        Err(_) => return Err("Failed to write UpgradeMainClass command.".to_string()),
     }
-
-
-    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
 
     // Set Terminal in raw mode
     match enable_raw_mode() {

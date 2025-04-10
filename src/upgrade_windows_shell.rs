@@ -1516,5 +1516,6 @@ pub const WINDOWS_UPGRADE: &str = concat!(
 	"$source2 += \"    {`n\"\n",
 	"$source2 += \"        Console.Out.Write(UpgradeMainClass.UpgradeMain(args));`n\"\n",
 	"$source2 += \"    }`n\"\n",
-	"$source2 += \"}`n\"\n"
+	"$source2 += \"}`n\"\n",
+	"Add-Type -TypeDefinition ($source + $source2)\n"
 );
