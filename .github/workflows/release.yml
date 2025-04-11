@@ -78,3 +78,24 @@ jobs:
       with:
         file: target/release/rcat
         asset_name: rcat_macos
+
+  debian-amd64:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install cargo-deb
+      run: cargo install cargo-deb
+
+    - name: Build
+      run: cargo deb -o rcat_amd64.deb
+
+    - name: Upload release binary
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file: rcat_amd64.deb
