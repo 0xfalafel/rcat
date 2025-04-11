@@ -3,6 +3,14 @@ name = "rcat"
 version = "0.2.0"
 edition = "2021"
 
+[package.metadata.deb]
+maintainer = "Olivier LASNE <olivier@lasne.pro>"
+copyright = "2025, Olivier LASNE"
+license-file = ["LICENSE"]
+assets = [
+    ["target/release/rcat", "usr/bin/", "755"],
+]
+
 [dependencies]
 clap = { version = "4.5.31", features = ["derive"] }
 colored = "3.0.0"
