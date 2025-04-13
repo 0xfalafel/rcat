@@ -67,6 +67,8 @@ struct Cli {
     #[arg(long)]
     key: Option<PathBuf>,
 
+    #[arg(long)]
+    self_signed: bool,
 
     host: String,
     port: Option<String>
