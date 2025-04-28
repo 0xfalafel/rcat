@@ -4,6 +4,7 @@ use tokio::{io::split, net::TcpStream};
 
 use tokio_rustls::{rustls::{self, client::danger::HandshakeSignatureValid, pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer, ServerName}, RootCertStore, ServerConfig, SignatureScheme}, TlsConnector};
 use tokio_rustls::rustls::client::danger::{ServerCertVerified, ServerCertVerifier};
+use rcgen::{generate_simple_self_signed, CertifiedKey};
 use crate::{common::read_write, Cli};
 
 pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String> {
@@ -69,12 +70,23 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
 
     let addr = format!("{}:{}", host, port);
 
-    if cli.cert.is_none() {
+    if cli.cert.is_none() && !cli.self_signed {
         return Err(String::from("A certificate (--cert) is required to create a TLS handler."))
     }
     
-    if cli.key.is_none() {
+    if cli.key.is_none() && !cli.self_signed {
         return Err(String::from("A private key (--key) is required to create a TLS handler."))
+    }
+
+    // Generate a self-signed certificate for our server.
+    if cli.self_signed {
+        let subject_alt_names = vec![addr];
+        let CertifiedKey { cert, key_pair } = generate_simple_self_signed(subject_alt_names).unwrap();
+
+        println!("{}", cert.pem());
+        println!("{}", key_pair.serialize_pem());
+
+        std::process::exit(0);
     }
 
     let tls_config = build_tls_server_config(
@@ -109,6 +121,10 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
     read_write(reader, writer, cli).await
 }
 
+/// generate an RSA private key
+fn generate_key() {
+    
+}
 
 fn build_tls_server_config(cert_path: &PathBuf, private_key_path: &PathBuf) -> Result<ServerConfig, String> {
 
