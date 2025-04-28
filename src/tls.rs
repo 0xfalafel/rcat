@@ -121,11 +121,6 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
     read_write(reader, writer, cli).await
 }
 
-/// generate an RSA private key
-fn generate_key() {
-    
-}
-
 fn build_tls_server_config(cert_path: &PathBuf, private_key_path: &PathBuf) -> Result<ServerConfig, String> {
 
     // Read the private key
