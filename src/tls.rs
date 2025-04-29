@@ -109,7 +109,9 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
         .map_err(|_| format!("failed to bind {}", addr))?;
 
     // Info message on successful bind
-    if !cli.silent {
+    if !cli.silent && cli.self_signed{
+        eprintln!("Listening on {} (tcp/tls) with a {} certificate", addr.cyan(), "self-signed".magenta());
+    } else if !cli.self_signed {
         eprintln!("Listening on {} (tcp/tls)", addr.cyan());
     }
 
