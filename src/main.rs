@@ -136,6 +136,11 @@ fn main() {
         cli.raw = true;
     }
 
+    // If we start a TLS server, without cert or key. Do a self-signed certificate
+    if cli.tls && cli.listen && cli.key.is_none() && cli.cert.is_none() {
+        cli.self_signed = true;
+    }
+    
     // If we have a TLS parameter, do a TLS connection
     if cli.cert.is_some() || cli.key.is_some() || cli.cafile.is_some() {
         cli.tls = true;
