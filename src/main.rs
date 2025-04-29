@@ -136,6 +136,11 @@ fn main() {
         cli.raw = true;
     }
 
+    // If --self-signed is present, the user wants to do a TLS server.
+    if cli.self_signed {
+        cli.tls = true;
+    }
+
     // If we start a TLS server, without cert or key. Do a self-signed certificate
     if cli.tls && cli.listen && cli.key.is_none() && cli.cert.is_none() {
         cli.self_signed = true;
