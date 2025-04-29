@@ -59,6 +59,10 @@ struct Cli {
     
     // Options for the TLS server
 
+    /// Use a self-signed certificate.
+    #[arg(long)]
+    self_signed: bool,
+
     /// Certificate used by the TLS server
     #[arg(long)]
     cert: Option<PathBuf>,
