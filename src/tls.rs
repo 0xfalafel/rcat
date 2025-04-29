@@ -16,6 +16,10 @@ pub async fn connect_tls(host: &str, port: u16, cli: &Cli) -> Result<(), String>
         .with_root_certificates(root_cert_store)
         .with_no_client_auth(); // we don't do certificate authentication at the moment
 
+
+    // Enable SSLKEYLOGFILE logging
+    config.key_log = Arc::new(rustls::KeyLogFile::new());
+
     // If --insecure is set. Ignore all TLS validation (Certificate, etc)
     if cli.insecure {
         config.dangerous().set_certificate_verifier(Arc::new(NoVerification));
@@ -78,7 +82,7 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
         return Err(String::from("A private key (--key) is required to create a TLS handler."))
     }
 
-    let tls_config = 
+    let mut tls_config = 
         if !cli.self_signed {
             build_tls_server_config(
         cli.cert.as_ref().unwrap(),
@@ -103,6 +107,10 @@ pub async fn server(host: &str, port: u16, cli: &Cli) -> Result<(), String>{
                 )
                 .map_err(|_| "Failed to generate TLS server configuration")?
         };
+
+    
+    // Enable SSLKEYLOGFILE logging
+    tls_config.key_log = Arc::new(rustls::KeyLogFile::new());
 
     let listener = tokio::net::TcpListener::bind(&addr)
         .await
