@@ -46,7 +46,8 @@ struct Cli {
     #[arg(long)]
     pwn: bool,
 
-    #[arg(short='R')]
+    /// Don't resize automatically the upgraded shell.
+    #[arg(short='R', long)]
     no_autoresize: bool,
 
     /// Set the terminal to raw mode when we recieve a connection.
