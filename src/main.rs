@@ -101,12 +101,20 @@ fn get_host_port(cli: &Cli) -> Result<(String, u16), String> {
     // Host will be "0.0.0.0" by default when listening
     // and an error when connecting to a server
     } else {
-        if cli.listen == false {
-            return Err("An host and port parameters are requierd to connect to a server".to_string());
+        // -l: we parse the only argument as a port number
+        if cli.listen {
+            let port = get_port(&cli.host)?;
+            Ok(("0.0.0.0".to_string(), port))
         }
 
-        let port = get_port(&cli.host)?;
-        return Ok(("0.0.0.0".to_string(), port));
+        // Only one arg, and no port: see if we have a port at the end of the host
+        // i.e example.com:1337
+        else if let Some((host, port)) = cli.host.rsplit_once(':') {
+            let port = get_port(port)?;
+            Ok((host.to_string(), port))
+        } else {
+            Err("An host and port parameters are requierd to connect to a server".to_string())
+        }
     }
 }
 
