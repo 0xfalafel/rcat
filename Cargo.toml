@@ -22,4 +22,4 @@ terminal_size = "0.4.2"
 tokio = { version = "1.44.2", features = ["full"] }
 tokio-rustls = "0.26.2"
 tokio-util = "0.7.14"
-webpki-roots = "0.26.8"
+webpki-roots = "1.0.0"
