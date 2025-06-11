@@ -76,9 +76,22 @@ where
         };
     }
 
-    let uname = String::from_utf8_lossy(&buf[..size]);
+    let mut uname = String::from_utf8_lossy(&buf[..size]);
     if uname.contains("Linux") {
         return Ok(OS::Unix)
+    }
+
+    // If the command is reflected, read again
+    if uname.contains("uname -s") {
+        size = match reader.read(&mut buf).await {
+            Ok(size) => size,
+            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
+        };
+
+        uname = String::from_utf8_lossy(&buf[..size]);
+        if uname.contains("Linux") {
+            return Ok(OS::Unix)
+        }
     }
     
     
