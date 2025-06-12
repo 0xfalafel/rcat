@@ -15,6 +15,11 @@ use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 
 use crate::upgrade_windows_shell::WINDOWS_UPGRADE;
 
+enum TerminalUpgradeError {
+    FailedToReadAnwser,
+    FailedUtf8Decoding,
+}
+
 #[derive(Debug, PartialEq)]
 pub enum OS {
     Unix,
@@ -49,6 +54,35 @@ where
     }
 
     Ok(os)
+}
+
+async fn send_command_read_anwser<T>(command: &str, reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<String, TerminalUpgradeError>
+where
+    T: AsyncWriteExt + AsyncReadExt
+{
+    let mut buf = vec![0;4096];
+
+    // Test if we have a Unix system
+    match writer.write_all(b"uname -s\n").await {
+        Ok(_)  => {},
+        Err(_) => return Err(TerminalUpgradeError::FailedToReadAnwser),
+    };
+
+    let mut size = match reader.read(&mut buf).await {
+        Ok(size) => Ok(size),
+        Err(_) => Err(TerminalUpgradeError::FailedToReadAnwser),
+    }?;
+
+    // If we just have an anwser like `$ `, read again
+    if size < 4 {
+        size = match reader.read(&mut buf).await {
+            Ok(size) => Ok(size),
+            Err(_) => Err(TerminalUpgradeError::FailedToReadAnwser),
+        }?;
+    }
+
+    let res = String::from_utf8_lossy(&buf[..size]);
+    Ok(res.to_string())
 }
 
 pub async fn detect_os<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -> Result<OS, String> 
