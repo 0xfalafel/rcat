@@ -17,7 +17,7 @@ use crate::upgrade_windows_shell::WINDOWS_UPGRADE;
 
 enum TerminalUpgradeError {
     FailedToReadAnwser,
-    FailedUtf8Decoding,
+    // FailedUtf8Decoding,
 }
 
 #[derive(Debug, PartialEq)]
@@ -38,10 +38,13 @@ where
     let time_limit = Duration::from_millis(500);
     let _res = timeout(time_limit, async {
         loop {
-            let _ = match reader.read(&mut buf).await {
+            let _size = match reader.read(&mut buf).await {
                 Ok(size) => size,
                 Err(_) => 0 //return Err("Initial read failed.".to_string()),
             };
+
+            let res = String::from_utf8_lossy(&buf[.._size]);
+            println!("ignored output: {:?}", res);
         }
     }).await;
 
@@ -63,7 +66,7 @@ where
     let mut buf = vec![0;4096];
 
     // Test if we have a Unix system
-    match writer.write_all(b"uname -s\n").await {
+    match writer.write_all(command.as_bytes()).await {
         Ok(_)  => {},
         Err(_) => return Err(TerminalUpgradeError::FailedToReadAnwser),
     };
@@ -82,6 +85,9 @@ where
     }
 
     let res = String::from_utf8_lossy(&buf[..size]);
+
+    
+
     Ok(res.to_string())
 }
 
@@ -89,70 +95,27 @@ pub async fn detect_os<T>(reader: &mut ReadHalf<T>, writer: &mut WriteHalf<T>) -
 where
     T: AsyncWriteExt + AsyncReadExt
 {
-    let mut buf = vec![0;4096];
-
     // Test if we have a Unix system
-    match writer.write_all(b"uname -s\n").await {
-        Ok(_)  => {},
-        Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-    }
-
-    let mut size = match reader.read(&mut buf).await {
-        Ok(size) => size,
+    let res_command= match send_command_read_anwser("uname -s\n", reader, writer).await {
+        Ok(res_command)  => res_command,
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     };
 
-    // If we just have an anwser like `$ `, read again
-    if size < 4 {
-        size = match reader.read(&mut buf).await {
-            Ok(size) => size,
-            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-        };
-    }
-
-    let mut uname = String::from_utf8_lossy(&buf[..size]);
-    if uname.contains("Linux") {
+    if res_command.contains("Linux") {
         return Ok(OS::Unix)
     }
 
-    // If the command is reflected, read again
-    if uname.contains("uname -s") {
-        size = match reader.read(&mut buf).await {
-            Ok(size) => size,
-            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-        };
 
-        uname = String::from_utf8_lossy(&buf[..size]);
-        if uname.contains("Linux") {
-            return Ok(OS::Unix)
-        }
-    }
-    
-    
     // Let's test if it's a Windows
-    match writer.write_all(b"systeminfo /?\n").await {
-        Ok(_)  => {},
-        Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-    }
-
-    let mut size = match reader.read(&mut buf).await {
-        Ok(size) => size,
+    let res_command= match send_command_read_anwser("systeminfo /?\n", reader, writer).await {
+        Ok(res_command)  => res_command,
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     };
 
-    // If we just have an anwser like `$ `, read again
-    if size < 4 {
-        size = match reader.read(&mut buf).await {
-            Ok(size) => size,
-            Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
-        };
-    }
-
-    let uname = String::from_utf8_lossy(&buf[..size]);
-    if uname.contains("SYSTEMINFO") {
+    if res_command.contains("SYSTEMINFO") {
         return Ok(OS::Windows)
     }
-
+    
     Ok(OS::Unknown)
 }
 
