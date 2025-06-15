@@ -22,6 +22,7 @@ enum TerminalUpgradeError {
 
 #[derive(Debug, PartialEq)]
 pub enum OS {
+    UnixRecentPy,
     Unix,
     Windows,
     Unknown
@@ -107,10 +108,23 @@ where
     };
 
     if res_command.contains("Linux") {
-        return Ok(OS::Unix)
-    }
 
-    println!("final res: {}", res_command);
+        // Let's try to detect if python version is 3.11 or more recent
+        let res_command = match send_command_read_anwser("python --version", reader, writer).await {
+            Ok(res_command)  => res_command,
+            Err(_) => return Ok(OS::Unix),
+        };
+
+        let improved_unix = is_python_3_11_or_above(&res_command);
+
+        let os = match improved_unix {
+            Some(true) => OS::UnixRecentPy,
+            Some(false) => OS::Unix,
+            None => OS::Unix
+        };
+        
+        return Ok(os);
+    }
 
     // Let's test if it's a Windows
     let res_command= match send_command_read_anwser("systeminfo /?", reader, writer).await {
@@ -289,7 +303,36 @@ pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String
     exit(0);
 }
 
+fn is_python_3_11_or_above(version_string: &str) -> Option<bool> {
+    // Find the starting index of "Python"
+    let python_index = version_string.find("Python")?;
 
+    // Extract the substring starting from "Python"
+    let substring = &version_string[python_index..];
+
+    // Split the substring by whitespace and take the next word after "Python"
+    let version_str = substring.split_whitespace().nth(1)?;
+
+    // Parse the version string into major and minor numbers
+    let version_parts: Vec<&str> = version_str.split('.').collect();
+    if version_parts.len() < 2 {
+        return None;
+    }
+
+    let major: u32 = version_parts[0].parse().ok()?;
+    let minor: u32 = version_parts[1].parse().ok()?;
+
+    // Compare with version 3.11
+    let is_above_or_equal = if major > 3 {
+        true
+    } else if major == 3 {
+        minor >= 11
+    } else {
+        false
+    };
+
+    Some(is_above_or_equal)
+}
 
 #[cfg(windows)]
 pub async fn end_on_signal(cancel_token: CancellationToken) -> Result<(), String> {
