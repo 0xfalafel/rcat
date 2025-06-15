@@ -42,9 +42,6 @@ where
                 Ok(size) => size,
                 Err(_) => 0 //return Err("Initial read failed.".to_string()),
             };
-
-            let res = String::from_utf8_lossy(&buf[.._size]);
-            println!("ignored output: {:?}", res);
         }
     }).await;
 
@@ -66,7 +63,7 @@ where
     let mut buf = vec![0;4096];
 
     // Test if we have a Unix system
-    match writer.write_all(command.as_bytes()).await {
+    match writer.write_all(format!("{command}\n").as_bytes()).await {
         Ok(_)  => {},
         Err(_) => return Err(TerminalUpgradeError::FailedToReadAnwser),
     };
@@ -84,9 +81,17 @@ where
         }?;
     }
 
-    let res = String::from_utf8_lossy(&buf[..size]);
+    let mut res = String::from_utf8_lossy(&buf[..size]);
 
-    
+    // If the command is reflected, read again
+    if res.contains(command) {
+        size = match reader.read(&mut buf).await {
+            Ok(size) => size,
+            Err(_) => return Err(TerminalUpgradeError::FailedToReadAnwser),
+        };
+
+        res = String::from_utf8_lossy(&buf[..size]);
+    }
 
     Ok(res.to_string())
 }
@@ -96,7 +101,7 @@ where
     T: AsyncWriteExt + AsyncReadExt
 {
     // Test if we have a Unix system
-    let res_command= match send_command_read_anwser("uname -s\n", reader, writer).await {
+    let res_command= match send_command_read_anwser("uname -s", reader, writer).await {
         Ok(res_command)  => res_command,
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     };
@@ -105,9 +110,10 @@ where
         return Ok(OS::Unix)
     }
 
+    println!("final res: {}", res_command);
 
     // Let's test if it's a Windows
-    let res_command= match send_command_read_anwser("systeminfo /?\n", reader, writer).await {
+    let res_command= match send_command_read_anwser("systeminfo /?", reader, writer).await {
         Ok(res_command)  => res_command,
         Err(_) => return Err("Failed to detect the remote operating system.".to_string()),
     };
