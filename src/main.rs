@@ -38,38 +38,43 @@ struct Cli {
     #[arg(short='s', long)]
     silent: bool,
 
-    /// Ignore Certificate errors when connecting with --tls.
-    #[arg(short='k', long)]
-    insecure: bool,
+    // Options for Shell upgrade
 
     /// Automagicaly upgrade a Reverse Shell to a fully interactive Shell. 
-    #[arg(long)]
+    #[arg(long, help_heading = "Shell upgrade")]
     pwn: bool,
 
     /// Don't resize automatically the upgraded shell.
-    #[arg(short='R', long)]
+    #[arg(short='R', long, help_heading = "Shell upgrade")]
     no_autoresize: bool,
 
     /// Set the terminal to raw mode when we recieve a connection.
-    #[arg(long)]
+    #[arg(long, help_heading = "Shell upgrade")]
     raw: bool,
 
+
+    // Options for the TLS client
+
+    /// Ignore Certificate errors when connecting with --tls.
+    #[arg(short='k', long, help_heading = "TLS client")]
+    insecure: bool,
+
     /// Certificate autority to use to valide the remote host when connecting with TLS.
-    #[arg(long)]
+    #[arg(long, help_heading = "TLS client")]
     cafile: Option<PathBuf>,
     
     // Options for the TLS server
 
     /// Use a self-signed certificate.
-    #[arg(long)]
+    #[arg(long, help_heading = "TLS client")]
     self_signed: bool,
 
     /// Certificate used by the TLS server
-    #[arg(long)]
+    #[arg(long, help_heading = "TLS server")]
     cert: Option<PathBuf>,
 
     /// Private key used by the TLS server
-    #[arg(long)]
+    #[arg(long, help_heading = "TLS server")]
     key: Option<PathBuf>,
 
 
