@@ -1,6 +1,6 @@
 [package]
 name = "rcat"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [package.metadata.deb]
@@ -12,14 +12,14 @@ assets = [
 ]
 
 [dependencies]
-clap = { version = "4.5.35", features = ["derive"] }
+clap = { version = "4.5.40", features = ["derive"] }
 colored = "3.0.0"
 crossterm = "0.29.0"
 futures = "0.3.31"
-rand = "0.9.0"
+rand = "0.9.1"
 rcgen = "0.13.2"
 terminal_size = "0.4.2"
 tokio = { version = "1.44.2", features = ["full"] }
 tokio-rustls = "0.26.2"
-tokio-util = "0.7.14"
-webpki-roots = "1.0.0"
+tokio-util = "0.7.15"
+webpki-roots = "1.0.1"
