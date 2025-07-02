@@ -56,7 +56,7 @@ struct Cli {
     // Options for the TLS client
 
     /// Ignore Certificate errors when connecting with --tls.
-    #[arg(short='k', long, help_heading = "TLS client")]
+    #[arg(short='i', long, help_heading = "TLS client")]
     insecure: bool,
 
     /// Certificate autority to use to valide the remote host when connecting with TLS.
@@ -66,7 +66,7 @@ struct Cli {
     // Options for the TLS server
 
     /// Use a self-signed certificate.
-    #[arg(long, help_heading = "TLS client")]
+    #[arg(long, help_heading = "TLS server")]
     self_signed: bool,
 
     /// Certificate used by the TLS server
