@@ -82,7 +82,7 @@ If you have a signed certificate (with [let's encrypt](https://certbot.eff.org/i
 But for now let's use a self-signed certificate:
 
 ```bash
-> rcat -l 1337 --self-signed
+> rcat -l 1337 --self-signed --pwn
 Listening on 0.0.0.0:1337 (tcp/tls) with a self-signed certificate
 ```
 
