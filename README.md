@@ -61,7 +61,7 @@ Unless you use the `-R` option, the remote terminal will automatically be resize
 
 <img src="images/rcat_resize.webp">
 
-> In this clip we run `htop` on the victim machine, and the reverse shell is automatically resized.
+> In this clip we run `htop` on the target machine, and the reverse shell is automatically resized.
 
 #### TLS support
 
@@ -73,7 +73,7 @@ Here we do an HTTPS request. We use `-t` to establish a _TLS connection_, and `-
   
 ## Encrypted Reverse shell
 
-With TLS support, let's see how we can do an __TLS encrypted reverse shell__. Without installing any new tools on the victim.
+With TLS support, let's see how we can do an __TLS encrypted reverse shell__. Without installing any new tools on the target.
 
 If you have a signed certificate (with [let's encrypt](https://certbot.eff.org/instructions) for example), you can use the `--key` and `--cert` options to use it.
 
