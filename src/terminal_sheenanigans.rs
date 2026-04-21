@@ -49,7 +49,7 @@ where
     let os = detect_os(reader, writer).await?;
     
     match os {
-        OS::Unix => upgrade_shell_linux(reader, writer).await?,
+        OS::Unix | OS::UnixRecentPy=> upgrade_shell_linux(reader, writer).await?,
         OS::Windows => upgrade_shell_windows(reader, writer).await?,
         _ => eprint!("{}", "[*] Only Linux and Windows are supported at the moment for the shell upgrade".yellow())
     }
