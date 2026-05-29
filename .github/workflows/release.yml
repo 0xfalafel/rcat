@@ -15,22 +15,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: aarch64-unknown-linux-musl
+          - target: aarch64-unknown-linux-gnu
             compiler: gcc-aarch64-linux-gnu
-            linker: CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc
-            release_binary: target/aarch64-unknown-linux-musl/release/rcat
+            linker: CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+            release_binary: target/aarch64-unknown-linux-gnu/release/rcat
             asset_name: rcat_arm64
 
-          - target: armv7-unknown-linux-musleabi
-            compiler: gcc-arm-linux-gnueabi
-            linker: CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABI_LINKER=arm-linux-gnueabi-gcc
-            release_binary: target/armv7-unknown-linux-musleabi/release/rcat
-            asset_name: rcat_arm32
-
-          - target: x86_64-unknown-linux-musl
+          - target: x86_64-unknown-linux-gnu
             compiler: gcc
-            linker: CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=gcc
-            release_binary: target/x86_64-unknown-linux-musl/release/rcat
+            linker: CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=gcc
+            release_binary: target/x86_64-unknown-linux-gnu/release/rcat
             asset_name: rcat_amd64
 
           - target: x86_64-pc-windows-gnu
@@ -94,25 +88,19 @@ jobs:
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
-      with:
-        toolchain: stable
-        targets: x86_64-unknown-linux-musl
 
     - name: Install cargo-deb
       run: cargo install cargo-deb
 
-    - name: Build a static binary with musl
-      run: cargo build --release --target x86_64-unknown-linux-musl
-
     - name: Build
-      run: cargo deb --target x86_64-unknown-linux-musl -o rcat_amd64.deb
+      run: cargo deb -o rcat_amd64.deb
 
     - name: Upload release binary
       uses: svenstaro/upload-release-action@v2
       with:
         file: rcat_amd64.deb
 
-  debian-aarch64:
+  debian-armv7:
     runs-on: ubuntu-latest
 
     steps:
@@ -123,7 +111,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-        targets: aarch64-unknown-linux-musl
+        targets: armv7-unknown-linux-musleabi
 
     - name: Install cargo-deb
       run: cargo install cargo-deb
@@ -131,16 +119,16 @@ jobs:
     - name: Install compiler
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-aarch64-linux-gnu
+        sudo apt-get install -y gcc-arm-linux-gnueabi
 
     - name: Setup the linker as an environment variable
-      run: echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+      run: echo "CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABI_LINKER=arm-linux-gnueabi-gcc" >> $GITHUB_ENV
 
     - name: Build a static binary with musl
-      run: cargo build --release --target aarch64-unknown-linux-musl
+      run: cargo build --release --target armv7-unknown-linux-musleabi
 
     - name: Build
-      run: cargo deb --target aarch64-unknown-linux-musl -o rcat_arm64.deb
+      run: cargo deb --target armv7-unknown-linux-musleabi -o rcat_arm64.deb
 
     - name: Upload release binary
       uses: svenstaro/upload-release-action@v2
